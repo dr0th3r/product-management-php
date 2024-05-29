@@ -1,0 +1,47 @@
+body {
+  display: flex;
+  justify-content: center;
+  height: 100vh;
+}
+
+table, th, td {
+  border: 1px solid #222;
+  border-collapse: collapse;
+}
+
+tr:nth-child(2n), thead > tr {
+  background-color: #f2f2f2;
+}
+
+th, td {
+  padding: 5px;
+  text-align: left;
+  max-width: 30vw;
+}
+
+.show-more-text {
+  display: none;
+}
+
+p {
+  text-align: justify;
+}
+
+.show-content > .show-more-text {
+  display: inline;
+}
+
+.show-content > .show-more-dots {
+  display: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+.show-more-btn {
+  border: none;
+  background-color: transparent;
+  color: blue;
+  padding: 0;
+}
