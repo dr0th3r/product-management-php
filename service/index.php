@@ -24,6 +24,8 @@
   if (!isset($_GET["sort_by"]) || !isset(SORT_COLUMNS[$_GET["sort_by"]])) {
     $_GET["sort_by"] = "code";
   }
+
+  include "fetch_filter_data.php";
 ?>
 
 <!DOCTYPE html>
@@ -33,11 +35,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <form method="get">
-    <label for="search-code">Search</label>
-    <input type="text" id="search-code" name="search">
-    <button type="submit">Search</button>
-  </form>
+  <?php include "components/filter_menu.php" ?>
   <table>
     <?php include "components/thead.php" ?>
     <?php include "components/tbody.php" ?>

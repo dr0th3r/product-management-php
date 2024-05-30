@@ -1,22 +1,53 @@
 <tbody>
   <?php
     $sql = "
-    SELECT
-      product.*, 
-      product_type.name as product_type_name,
-      manufacturer.name as manufacturer_name 
-    FROM
-      product  
-    JOIN 
-      product_type ON product.product_type = product_type.id 
-    JOIN
-      manufacturer ON product.manufacturer = manufacturer.id
+      SELECT
+        product.*, 
+        product_type.name as product_type_name,
+        manufacturer.name as manufacturer_name 
+      FROM
+        product  
+      JOIN 
+        product_type ON product.product_type = product_type.id 
+      JOIN
+        manufacturer ON product.manufacturer = manufacturer.id
     ";
 
-    if (isset($_GET["search"])) {
-      $sql .= "WHERE product.code LIKE ?";
+    $param_types = "";
+    $prepared_params = [];
+
+    function set_filter(string $column, string $comparison_type, string $param_type, $param_value) {
+      global $sql, $param_types, $prepared_params;
+
+      static $is_where_set = false;
+      if (!$is_where_set) {
+        $sql .= "WHERE ";
+        $is_where_set = true;
+      } else {
+        $sql .= "AND ";
+      }
+
+      $param_types .= $param_type;
+      $prepared_params[] = $param_value;
+      $sql .= "{$column} {$comparison_type} ? ";
     }
 
+    if (!empty($_GET["search"])) {
+      set_filter("product.code", "LIKE", "s", "%{$search}%");
+    }
+    if (!empty($_GET["price-min"]) && $_GET["price-min"] >= $min_price) {
+      set_filter("product.price", ">=", "i", $_GET["price-min"]);
+    }
+    if (!empty($_GET["price-max"]) && $_GET["price-max"] <= $max_price) {
+      set_filter("product.price", "<=", "i", $_GET["price-max"]);
+    }
+    if (!empty($_GET["product-type"])) {
+      set_filter("product.product_type", "=", "i", $_GET["product-type"]);
+    }
+    if (!empty($_GET["manufacturer"])) {
+      set_filter("product.manufacturer", "=", "i", $_GET["manufacturer"]);
+    }
+    
     $sql .= "
     ORDER BY
       {$_GET["sort_by"]} {$_GET["sort_order"]}
@@ -25,9 +56,8 @@
 
     $stmt = $conn->prepare($sql);
 
-    if (isset($_GET["search"])) {
-      $search = "%{$search}%";
-      $stmt->bind_param("s", $search);
+    if (count($prepared_params) > 0) {
+      $stmt->bind_param($param_types, ...$prepared_params);
     }
 
     $stmt->execute();
