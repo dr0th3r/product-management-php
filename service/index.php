@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <form method="get" action="{$_SERVER['PHP_SELF']}">
+  <form method="get">
     <label for="search-code">Search</label>
     <input type="text" id="search-code" name="search">
     <button type="submit">Search</button>
@@ -78,11 +78,28 @@
           product_type ON product.product_type = product_type.id 
         JOIN
           manufacturer ON product.manufacturer = manufacturer.id
+        ";
+
+        if (isset($_GET["search"])) {
+          $sql .= "WHERE product.code LIKE ?";
+        }
+
+        $sql .= "
         ORDER BY
           {$_GET["sort_by"]} {$_GET["sort_order"]}
         LIMIT 10;
         ";
-        $result = $conn->query($sql);
+
+        $stmt = $conn->prepare($sql);
+
+        if (isset($_GET["search"])) {
+          $search = "%{$_GET['search']}%";
+          $stmt->bind_param("s", $search);
+        }
+
+        $stmt->execute();
+
+        $result = $stmt->get_result();
 
         if ($result->num_rows > 0) {
           while ($row = $result->fetch_assoc()) {
