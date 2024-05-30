@@ -32,21 +32,16 @@
       $sql .= "{$column} {$comparison_type} ? ";
     }
 
-    if (!empty($_GET["search"])) {
-      set_filter("product.code", "LIKE", "s", "%{$search}%");
-    }
-    if (!empty($_GET["price-min"]) && $_GET["price-min"] >= $min_price) {
+    if (!empty($_GET["search"]))
+      set_filter("product.code", "LIKE", "s", "%{$_GET['search']}%");
+    if ($_GET["price-min"] != $min_price)
       set_filter("product.price", ">=", "i", $_GET["price-min"]);
-    }
-    if (!empty($_GET["price-max"]) && $_GET["price-max"] <= $max_price) {
+    if ($_GET["price-max"] != $max_price)
       set_filter("product.price", "<=", "i", $_GET["price-max"]);
-    }
-    if (!empty($_GET["product-type"])) {
+    if (!empty($_GET["product-type"]))
       set_filter("product.product_type", "=", "i", $_GET["product-type"]);
-    }
-    if (!empty($_GET["manufacturer"])) {
+    if (!empty($_GET["manufacturer"]))
       set_filter("product.manufacturer", "=", "i", $_GET["manufacturer"]);
-    }
     
     $sql .= "
     ORDER BY
