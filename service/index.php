@@ -4,14 +4,19 @@
   const DB_PASSWORD = "";
   const DB_NAME = "extradeon";
 
+  const DEFAULT_SORT_ORDER = "asc";  
+
+  const PRODUCTS_PER_PAGE = 10;
+
   $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
 
   if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
   }
 
+
   if (!isset($_GET["sort_order"]) || !in_array($_GET["sort_order"], ["asc", "desc"])) {
-    $_GET["sort_order"] = "desc";
+    $_GET["sort_order"] = DEFAULT_SORT_ORDER;
   }
 
   const SORT_COLUMNS = [

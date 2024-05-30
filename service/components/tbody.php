@@ -13,41 +13,21 @@
         manufacturer ON product.manufacturer = manufacturer.id
     ";
 
-    $param_types = "";
-    $prepared_params = [];
+    //we get db_filters as well as prepared_params and param_types from db_filters.php which is included in filter_menu.php
+    $sql .= $db_filters;
 
-    function set_filter(string $column, string $comparison_type, string $param_type, $param_value) {
-      global $sql, $param_types, $prepared_params;
-
-      static $is_where_set = false;
-      if (!$is_where_set) {
-        $sql .= "WHERE ";
-        $is_where_set = true;
-      } else {
-        $sql .= "AND ";
-      }
-
-      $param_types .= $param_type;
-      $prepared_params[] = $param_value;
-      $sql .= "{$column} {$comparison_type} ? ";
-    }
-
-    if (!empty($_GET["search"]))
-      set_filter("product.code", "LIKE", "s", "%{$_GET['search']}%");
-    if ($_GET["price-min"] != $min_price)
-      set_filter("product.price", ">=", "i", $_GET["price-min"]);
-    if ($_GET["price-max"] != $max_price)
-      set_filter("product.price", "<=", "i", $_GET["price-max"]);
-    if (!empty($_GET["product-type"]))
-      set_filter("product.product_type", "=", "i", $_GET["product-type"]);
-    if (!empty($_GET["manufacturer"]))
-      set_filter("product.manufacturer", "=", "i", $_GET["manufacturer"]);
-    
+    //we don't need to check this because we handle that in /index.php
     $sql .= "
     ORDER BY
       {$_GET["sort_by"]} {$_GET["sort_order"]}
-    LIMIT 10;
-    ";
+    LIMIT " . PRODUCTS_PER_PAGE . " ";
+
+  //we process the page in filter_menu.php
+    if ($_GET["page"] > 1) {
+      $sql .= "OFFSET " . ($_GET["page"] - 1) * PRODUCTS_PER_PAGE . "\n";
+    }
+
+    $sql .= ";";
 
     $stmt = $conn->prepare($sql);
 

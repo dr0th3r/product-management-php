@@ -4,9 +4,10 @@
   ?>
   <?php foreach (SORT_COLUMNS as $column => $column_name): ?>
     <?php
-      $sort_order = "asc";
+      $sort_order = DEFAULT_SORT_ORDER;
+      //we don't need to check if it's set because we handle that in /index.php
       if ($_GET["sort_by"] === $column) {
-        $sort_order = $_GET["sort_order"] === "asc" ? "desc" : "asc";
+        $sort_order = $_GET["sort_order"] === "desc" ? "asc" : "desc";
       }
     ?>
     <th>

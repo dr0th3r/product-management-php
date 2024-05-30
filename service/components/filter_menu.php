@@ -1,6 +1,6 @@
 <?php
-    $min_price_param = intval($_GET["price-min"]) ?? $min_price;
-    $max_price_param = intval($_GET["price-max"]) ?? $max_price;
+    $min_price_param = intval($_GET["price-min"] ?? $min_price);
+    $max_price_param = intval($_GET["price-max"] ?? $max_price);
 
     $error = "";
 
@@ -12,6 +12,24 @@
 
     $_GET["price-min"] = $min_price_param;
     $_GET["price-max"] = $max_price_param;
+
+    include "db_filters.php";
+
+    $sql = "SELECT COUNT(*) as product_count FROM product $db_filters;";
+
+    $stmt = $conn->prepare($sql);
+
+    if (count($prepared_params) > 0) {
+      $stmt->bind_param($param_types, ...$prepared_params);
+    }
+
+    $stmt->execute();
+
+    $result = $stmt->get_result();
+    
+    $product_count = $result->fetch_assoc()["product_count"];
+
+    echo $product_count;
 ?>
 
 <form method="get" class="filter-form">
@@ -67,5 +85,19 @@
   <?php
     if (!empty($error))
       echo "<p>{$error}</p>";
+
+    if ($product_count > PRODUCTS_PER_PAGE) {
+      $page_count = ceil($product_count / PRODUCTS_PER_PAGE);
+      $current_page = $_GET["page"] ?? 1;
+      $_GET["page"] = $current_page;
+      $prev_page = $current_page - 1;
+      $next_page = $current_page + 1;
+      if ($prev_page > 0) {
+        echo "<a href='?page={$prev_page}'>Prev</a>";
+      }
+      if ($next_page <= $page_count) {
+        echo "<a href='?page={$next_page}'>Next</a>";
+      }
+    }
   ?>
 </form>
