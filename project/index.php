@@ -10,14 +10,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
+  <link rel="stylesheet" href="public/style.css">
 </head>
 <body>
-  <?php $controller->getFilterMenu(); ?>
+  <?php 
+    $controller->getFilterMenu(); 
+    $controller->getPageNav();
+  ?>
   <table>
     <?php
       $controller->getTableHead();
       $controller->getTableBody();
     ?>
   </table>
+
+  <script src="public/script.js"></script>
 </body>
 </html>

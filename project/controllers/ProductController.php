@@ -4,9 +4,9 @@
   class ProductController {
     public function getFilterMenu() {      
       $hiddenInputs = [];
-      foreach (["order_by", "order"] as $key => $value) {
+      foreach (["order_by", "order", "page"] as $key => $value) {
         if (!empty($_GET[$key])) {
-          $hiddenInputs[] = $key;
+          $hiddenInputs[$key] = $_GET[$key];
         }
       }
 
@@ -15,9 +15,21 @@
       $selectedProductType = $_GET["product_type"] ?? "";
       $selectedManufacturer = $_GET["manufacturer"] ?? "";
 
-      echo Product::getProductCount(self::parseFilters());
-
       include "views/ProductFilterMenu.php";
+    }
+
+    public function getPageNav() {
+      $pageCount = ceil(Product::getProductCount(self::parseFilters()) / Product::DEFAULT_LIMIT);
+      $currentPage = $_GET["page"] ?? 1;
+
+      if ($currentPage > 1) {
+        $previousPageQuery = http_build_query(["page" => $currentPage - 1] + $_GET);
+        echo "<a href='?{$previousPageQuery}'>Previous page</a>";
+      }
+      if ($currentPage < $pageCount) {
+        $nextPageQuery = http_build_query(["page" => $currentPage + 1] + $_GET);
+        echo "<a href='?{$nextPageQuery}'>Next page</a>";
+      }
     }
 
     public function getTableHead() {  
@@ -29,15 +41,15 @@
       foreach (Product::ORDER_BY_COLUMNS as $key => $value) {
         $isCurrentOrderByColumn = $currentOrderByColumn == $key;
 
-        $queryParams = [];
+        $newQueryParams = [];
 
-        $queryParams["order_by"] = $key;
-        $queryParams["order"] = 
+        $newQueryParams["order_by"] = $key;
+        $newQueryParams["order"] = 
           ($isCurrentOrderByColumn && $isCurrentOrderAsc) ? "desc" : "asc";
-        $queryParams["page"] =
+        $newQueryParams["page"] =
           ($isCurrentOrderByColumn && !empty($_GET["page"])) ? $_GET["page"] : 1;
-        
-        $queryString = http_build_query($queryParams);
+
+        $queryString = http_build_query($newQueryParams + $_GET);
 
         echo "<th><a href='?{$queryString}'>{$value}</a></th>";
       }

@@ -1,6 +1,6 @@
 <form method="get">
-  <?php foreach ($hiddenInputs as $hiddenInput): ?>
-    <!-- <input type="hidden" name="<?= $hiddenInput ?>" value="<?= $_GET[$hiddenInput] ?>"> -->
+  <?php foreach ($hiddenInputs as $name => $value): ?>
+    <input type="hidden" name="<?= $name ?>" value="<?= $value ?>">
   <?php endforeach; ?>
   <input type="text" name="search" placeholder="Search" value="">
   <input type="number" name="price_min" id="price-min" value="<?= $filteringOptions['price_min'] ?>">
@@ -29,3 +29,9 @@
   </select>
   <button type="submit">Filter</button>
 </form>
+<?php if (isset($previousPageQuery)): ?>
+  <a href="?<?= $previousPageQuery ?>">Previous page</a>
+<?php endif; ?>
+<?php if (isset($nextPageQuery)): ?>
+  <a href="?<?= $nextPageQuery ?>">Next page</a>
+<?php endif; ?>
