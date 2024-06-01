@@ -3,11 +3,11 @@
     <!-- <input type="hidden" name="<?= $hiddenInput ?>" value="<?= $_GET[$hiddenInput] ?>"> -->
   <?php endforeach; ?>
   <input type="text" name="search" placeholder="Search" value="">
-  <input type="number" name="price-min" id="price-min" value="<?= $filteringOptions['price-min'] ?>">
-  <input type="number" name="price-max" id="price-max" value="<?= $filteringOptions['price-max'] ?>">
-  <select name="product-type">
+  <input type="number" name="price_min" id="price-min" value="<?= $filteringOptions['price_min'] ?>">
+  <input type="number" name="price_max" id="price-max" value="<?= $filteringOptions['price_max'] ?>">
+  <select name="product_type">
     <option value="">All product types</option>
-    <?php foreach ($filteringOptions["product-types"] as $productType): ?>
+    <?php foreach ($filteringOptions["product_types"] as $productType): ?>
       <option 
         value="<?= $productType["id"] ?>"
         <?php if ($selectedProductType == $productType["id"]) echo "selected" ?>
