@@ -1,7 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
 
+:root {
+  --p: #0575E5;
+  --radius: 8px;
+}
+
 body {
-  height: 100vh;
   font-family: 'Roboto', sans-serif;
 }
 
@@ -28,11 +32,9 @@ nav ol {
 }
 
 ol li {
-  background-color: #f2f2f2;
   width: 2rem;
   height: 2rem;
-  border-radius: 8px;
-  border: 1px solid black;
+  border-radius: var(--radius);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -47,18 +49,23 @@ ol li a {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s ease-out; 
+}
+
+ol li a:hover {
+  color: var(--p);
 }
 
 form {
   display: flex;
   flex-direction: column;
-  gap: .5rem;
+  gap: .2rem;
 }
 
 form input, form select, button {
   padding: .5rem;
   font-size: 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius);
 
   border: 1px solid black;
 }
@@ -72,24 +79,42 @@ table {
 }
 
 table, th, td {
-  border: 1px solid black;
   border-collapse: collapse;
 }
 
-tr:nth-child(2n), thead > tr {
-  background-color: #f2f2f2;
+tr:nth-child(2n) {
+  background-color: #eee;
+}
+
+thead tr {
+  background-color: var(--p);
+  color: #fff;
 }
 
 th, td {
   padding: 5px;
   text-align: left;
   max-width: 30vw;
+  height: 2rem;
+}
+
+th a {
+  text-decoration: none;
+  color: #fff;
+}
+
+td > input, td > textarea {
+  background-color: transparent;
+  border: none;
+  outline: none;
+  font-size: .9rem;
+  min-width: 0;
 }
 
 .show-more-btn {
   border: none;
   background-color: transparent;
-  color: blue;
+  color: var(--p);
   padding: 0;
   cursor: pointer;
 }
@@ -116,20 +141,12 @@ th, td {
   user-select: none;
 }
 
-td > input, td > textarea {
-  background-color: transparent;
-  border: none;
-  outline: none;
-  font-size: .9rem;
-  min-width: 0;
-}
-
 label {
   display: flex;
   flex-direction: column;
   font-size: .9rem;
   padding: 0;
-  gap: .25rem;
+  margin-top: .3rem;
   font-weight: bold;
 }
 
@@ -162,7 +179,7 @@ select {
   left: 0;
   right: 0;
   background-color: #fff;
-  border-radius: 0 0 8px 8px;
+  border-radius: 0 0 var(--radius) var(--radius);
   border: 1px solid black;
   max-height: 200px;
   overflow:auto;
@@ -175,7 +192,7 @@ select {
   box-sizing: border-box;
 }
 .searching .search-input {
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 
 .searching .search-options {
@@ -187,5 +204,50 @@ select {
 }
 
 .searching .search-options li:hover {
-  background-color: #f2f2f2;
+  background-color: #eee;
+}
+
+.show-results-btn {
+  margin-top: .3rem;
+}
+
+.show-results-btn, #edit-btn {
+  background-color: var(--p);
+  color: #fff;
+  font-weight: bold;
+  border: 1px solid var(--p);
+  transition: all .3s ease-out;
+}
+
+.show-results-btn:hover, #edit-btn:hover {
+  background-color: #0569ce;
+}
+
+p {
+  margin: .5rem 0;
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  translate: transform(-50%, -50%);
+  background-color: #fff;
+  border-radius: var(--radius);
+  padding: 1rem;
+  border: 1px solid #cf1616;
+}
+
+.close-modal-btn {
+  align-self: flex-end;
+  background-color: #cf1616;
+  color: #fff;
+  border: none;
+  padding: .5rem;
+  font-weight: bold;
+  cursor: pointer;
 }

@@ -135,33 +135,26 @@
           $sql .= ",";
         }
       }
-      $sql .= " WHERE id IN (" . str_repeat("?,", $changedColumnsCount - 1) . "?);";
+      $sql .= " WHERE id IN (" . str_repeat("?,", count($ids) - 1) . "?);";
 
       $stmt = $pdo->prepare($sql);
-
-      $params = [];
 
       //bind values
       $bindedParamsCount = 0;
       foreach($changes as $column => $columnChanges) {
         foreach($columnChanges as $id => $newValue) {
-          $params[] = $id;
-          $params[] = $newValue;
-
           $stmt->bindValue(++$bindedParamsCount, $id, PDO::PARAM_INT);
           $stmt->bindValue(++$bindedParamsCount, $newValue, is_int($newValue) ? PDO::PARAM_INT : PDO::PARAM_STR);
         }
       }
       foreach($ids as $id => $_) {
-        $params[] = $id;
         $stmt->bindValue(++$bindedParamsCount, $id, PDO::PARAM_INT);
       }
 
       try {
         $stmt->execute();
-        return "Products updated successfully!";
       } catch(PDOException $e) {
-        return ["Database error: " . $e->getMessage(), "SQL: $sql", $params];
+        return ["error" => "Nastala neočekávaná chyba při ukládání změn"];
       } 
     }
 
@@ -174,11 +167,10 @@
         $addedFiltersCount = 0;
         foreach ($filters as $column => $filter) {
           //$filter[0] is the operator, $filter[1] is the value
-          if ($filter[0] === "BETWEEN") {
-            $sql .= "product.$column BETWEEN :${column}_min AND :${column}_max";
+          if ($filter[0] === ComparisonOperator::Between) {
+            $sql .= "product.$column " . ComparisonOperator::Between->value . " :${column}_min AND :${column}_max";
           } else {
-            //TODO: add handling operators as enums
-            $sql .= "product.$column $filter[0] :$column"; 
+            $sql .= "product.$column {$filter[0]->value} :$column"; 
           }
 
           if (++$addedFiltersCount < $filtersCount) {
@@ -191,7 +183,7 @@
     private static function bindFilterValues($stmt, $filters) {
       foreach ($filters as $column => $filter) {
         //$filter[0] is the operator, $filter[1] is the value
-        if ($filter[0] === "BETWEEN") {
+        if ($filter[0] === ComparisonOperator::Between) {
           $stmt->bindValue("${column}_min", $filter[1][0], is_int($filter[1][0]) ? PDO::PARAM_INT : PDO::PARAM_STR);
           $stmt->bindValue("${column}_max", $filter[1][1], is_int($filter[1][1]) ? PDO::PARAM_INT : PDO::PARAM_STR);
         } else {

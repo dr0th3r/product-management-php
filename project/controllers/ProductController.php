@@ -1,6 +1,8 @@
 <?php
   require_once "models/Product.php";
 
+  require_once "config/db.php";
+
   class ProductController {
     public function getFilterMenu() {      
       $hiddenInputs = [];
@@ -69,6 +71,7 @@
 
       $columns = Product::ORDER_BY_COLUMNS + Product::OTHER_COLUMNS;
       $queries = [];
+      $orders = [];
 
       foreach (Product::ORDER_BY_COLUMNS as $key => $_) {
         $isCurrentOrderByColumn = $currentOrderByColumn == $key;
@@ -82,6 +85,7 @@
           ($isCurrentOrderByColumn && !empty($_GET["page"])) ? $_GET["page"] : 1;
 
         $queries[] = http_build_query($newQueryParams + $_GET);
+        $orders[] = $newQueryParams["order"] === "asc";
       }
 
       include "views/ProductTableHead.php";
@@ -99,7 +103,16 @@
     }
 
     public function editProducts($changes) {
-      return Product::editProducts($changes);
+      if (empty($changes)) {
+        http_response_code(400);
+        return ["error" => "Nebyly poskytnuty žádné změny"];
+      }
+
+      $error = Product::editProducts($changes);
+      if (isset($error)) {
+        http_response_code(500);
+        return $error;
+      }
     }
 
     private static function parseFilters() {
@@ -114,16 +127,16 @@
       
       $filters = [];
       if (!empty($_GET["search"])) {
-        $filters["code"] = ["LIKE", "%{$_GET['search']}%"];
+        $filters["code"] = [ComparisonOperator::Like, "%{$_GET['search']}%"];
       }
       if ($priceMin != 0 || $priceMax != PHP_INT_MAX) {
-        $filters["price"] = ["BETWEEN", [$priceMin, $priceMax]];
+        $filters["price"] = [ComparisonOperator::Between, [$priceMin, $priceMax]];
       }
       if (!empty($_GET["product_type"])) {
-        $filters["product_type"] = ["=", $_GET["product_type"]];
+        $filters["product_type"] = [ComparisonOperator::Equals, $_GET["product_type"]];
       }
       if (!empty($_GET["manufacturer"])) {
-        $filters["manufacturer"] = ["=", $_GET["manufacturer"]];
+        $filters["manufacturer"] = [ComparisonOperator::Equals, $_GET["manufacturer"]];
       }
 
       return $filters;

@@ -13,15 +13,6 @@
   if ($_SERVER["REQUEST_METHOD"] == "PATCH") {
     $data = getPatchData();
 
-    if (empty($data)) {
-      http_response_code(400);
-      echo json_encode(["error" => "No data provided"]);
-      exit;
-    }    
-
-    echo json_encode([
-      "msg" => $controller->editProducts($data),
-      "data" => $data,
-    ]);
+    echo json_encode($controller->editProducts($data));
   }
 ?>

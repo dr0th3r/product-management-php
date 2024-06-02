@@ -1,4 +1,4 @@
-//show more hndling
+//SHOW MORE HANLDING
 const showMoreBtns = document.querySelectorAll(".show-more-btn");
 
 showMoreBtns.forEach((btn) => {
@@ -7,25 +7,30 @@ showMoreBtns.forEach((btn) => {
 
   btn.addEventListener("click", () => {
     btn.textContent =
-      btn.textContent === "Show More" ? "Show Less" : "Show More";
+      btn.textContent === "Zobrazit více" ? "Zobrzit méně" : "Zobrazit více";
     descriptionDots.classList.toggle("visible");
     descriptionRest.classList.toggle("visible");
   });
 });
 
-//select search
+//SELECTABLE SEARCH
 const searchableSelects = document.querySelectorAll(".searchable-select");
-searchableSelects.forEach((select) => {
+//we add ability to search for options to base inputs
+searchableSelects.forEach((select) => addSearchability(select));
+
+function addSearchability(select, onSelect) {
   const optionList = select.querySelector(".search-options");
   const searchInput = select.querySelector(".search-input");
   const idInput = select.querySelector(".id-input");
 
   let wasOptionSelected = false;
 
+  //we have to use mousedown because unlike click it fires before blur
   optionList.addEventListener("mousedown", (e) => {
     idInput.value = e.target.dataset.id;
     searchInput.value = e.target.textContent;
     wasOptionSelected = true;
+    onSelect && onSelect(e.target);
   });
 
   searchInput.addEventListener("focus", () => {
@@ -47,7 +52,7 @@ searchableSelects.forEach((select) => {
   searchInput.addEventListener("input", () =>
     filterOptions(optionList.children, searchInput.value.toLowerCase())
   );
-});
+}
 
 function filterOptions(options, searchValue) {
   for (const option of options) {
@@ -73,18 +78,19 @@ let changes = {};
 const selectProductTypeTemplate = getSelectElTemplate("product_type");
 const selectManufacturerTemplate = getSelectElTemplate("manufacturer");
 
-const productTypes = getTextValueFromOptionIds(selectProductTypeTemplate);
-const manufacturers = getTextValueFromOptionIds(selectManufacturerTemplate);
+//gets options to object where key is textContent and value is id
+const productTypes = getOptions(selectProductTypeTemplate);
+const manufacturers = getOptions(selectManufacturerTemplate);
 
 const tbody = document.querySelector("tbody");
 
 editBtn.addEventListener("click", () => {
   if (!isEditing) {
     isEditing = true;
-    editBtn.textContent = "Save";
+    editBtn.textContent = "Uložit";
   } else {
     isEditing = false;
-    editBtn.textContent = "Edit";
+    editBtn.textContent = "Upravit";
     saveChanges();
   }
 });
@@ -105,14 +111,20 @@ tbody.addEventListener("click", (e) => {
 
 function getSelectElTemplate(templateId) {
   const template = document.getElementById(templateId).cloneNode(true);
-  //remove option to select all
+
+  //we remove label
   template.removeChild(template.firstElementChild);
 
   return template;
 }
 
-function getTextValueFromOptionIds(select) {
-  return Array.from(select.children).map((option) => option.textContent.trim());
+function getOptions(select) {
+  const options = select.querySelector(".search-options");
+
+  return Array.from(options.children).reduce((acc, option) => {
+    acc[option.textContent] = option.dataset.id;
+    return acc;
+  }, {});
 }
 
 function changeForInput(td) {
@@ -129,7 +141,7 @@ function changeForInput(td) {
     case "price":
       newInput(td, newTd, rowId, "number");
       break;
-    case "product-type":
+    case "product_type":
       newSelect(td, newTd, rowId, selectProductTypeTemplate, productTypes);
       break;
     case "manufacturer":
@@ -144,7 +156,7 @@ function newInput(td, newTd, rowId, type) {
   const newInput = document.createElement("input");
   newInput.type = type;
   newInput.value = td.textContent;
-  newTd.appendChild(newInput);
+  newTd.append(newInput);
 
   newInput.addEventListener("blur", (e) => {
     td.classList.remove("hidden");
@@ -173,32 +185,31 @@ function newInput(td, newTd, rowId, type) {
   td.classList.add("hidden");
 }
 
-function newSelect(td, newTd, rowId, template, idToValue) {
+function newSelect(td, newTd, rowId, template, textContentToId) {
   const newSelect = template.cloneNode(true);
-  for (const option of newSelect.children) {
-    if (option.textContent.trim() === td.textContent) {
-      option.selected = true;
-    }
-  }
 
-  newTd.appendChild(newSelect);
+  newTd.append(newSelect);
 
-  newSelect.addEventListener("blur", (e) => {
+  addSearchability(newSelect, (selectedOption) => {
     td.classList.remove("hidden");
+    if (td.textContent !== selectedOption.textContent) {
+      setChange(
+        rowId,
+        td.className,
+        selectedOption.dataset.id,
+        textContentToId[td.textContent]
+      );
 
-    const id = e.target.value - 1;
-    const textValue = idToValue[id];
-    if (td.textContent !== textValue) {
-      setChange(rowId, td.className, textValue, td.textContent);
-
-      td.textContent = textValue;
+      td.textContent = selectedOption.textContent;
     }
 
     newTd.remove();
   });
 
+  const searchInput = newSelect.querySelector(".search-input");
+
   td.after(newTd);
-  newSelect.focus();
+  searchInput.focus();
   td.classList.add("hidden");
 }
 
@@ -212,7 +223,7 @@ function newTextarea(td, newTd, rowId) {
 
   newTextarea.value = textareaValue;
 
-  newTd.appendChild(newTextarea);
+  newTd.append(newTextarea);
 
   newTextarea.addEventListener("blur", (e) => {
     td.classList.remove("hidden");
@@ -254,8 +265,6 @@ async function saveChanges() {
     return acc;
   }, {});
 
-  console.log(newValues);
-
   try {
     const response = await fetch("edit.php", {
       method: "PATCH",
@@ -265,16 +274,38 @@ async function saveChanges() {
       body: JSON.stringify(newValues),
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to save changes");
-    }
-
     const data = await response.json();
-    console.log(data?.msg);
-    console.log(data?.data);
+
+    if (!response.ok) {
+      throw new Error(data?.error || "Neočekávaná chyba při ukládání změn.");
+    }
 
     changes = {};
   } catch (error) {
     console.error(error);
+    showErrorModal(error);
   }
+}
+
+function showErrorModal(errorMsg) {
+  const modal = document.createElement("div");
+
+  modal.classList.add("modal");
+
+  modal.innerHTML = `
+      <h2>Chyba</h2>
+      <p>${errorMsg}</p>
+  `;
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "close-modal-btn";
+  closeBtn.textContent = "Zavřít";
+
+  closeBtn.addEventListener("click", () => {
+    modal.remove();
+  });
+
+  modal.append(closeBtn);
+
+  document.body.append(modal);
 }

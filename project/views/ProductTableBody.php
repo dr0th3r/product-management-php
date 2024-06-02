@@ -3,7 +3,8 @@
     <tr id="<?= $product["id"] ?>">
       <td class="code"><?= $product["code"] ?></td>
       <td class="price"><?= $product["price"] ?></td>
-      <td class="product-type"><?= $product["product_type_name"] ?></td>
+      <!-- there is product_type with underscore becaue that's the name in the db -->
+      <td class="product_type"><?= $product["product_type_name"] ?></td>
       <td class="manufacturer"><?= $product["manufacturer_name"] ?></td>
       <?php
         $descriptionShort = substr($product["description"], 0, 100);

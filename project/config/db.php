@@ -13,4 +13,15 @@ class Database {
     }
   }
 }
+
+enum ComparisonOperator: string {
+  case Equals = "=";
+  case NotEquals = "<>";
+  case GreaterThan = ">";
+  case GreaterThanOrEquals = ">=";
+  case LessThan = "<";
+  case LessThanOrEquals = "<=";
+  case Like = "LIKE";
+  case Between = "BETWEEN";
+}
 ?>
