@@ -15,7 +15,9 @@
       "product_type" => "Product Type",
       "manufacturer" => "Manufacturer",
     ];
-    const OTHER_COLUMNS = ["Description"];
+    const OTHER_COLUMNS = [
+      "description" => "Description",
+    ];
 
     const DEFAULT_ORDER_BY_COLUMN = "code";
     const DEFAULT_ORDER = "asc";
@@ -104,21 +106,82 @@
       }
     }
 
+    public static function editProducts($changes = []) {
+      if (empty($changes)) return;
+
+      $pdo = Database::connect();
+
+      $sql = "UPDATE product SET";
+
+      //add changes to query
+      $ids = [];
+      $changedColumnsCount = count($changes);
+      $alreadyChangedCount = 0;
+      foreach ($changes as $column => $columnChanges) {
+        if (!self::isValidColumn($column)) {
+          continue;
+        }
+
+        $sql .= " $column = CASE id";
+
+        foreach ($columnChanges as $id => $newValue) {
+          $ids[$id] = true; //we collect unique ids
+          $sql .= " WHEN ? THEN ?";
+        }
+        
+        $sql .= " ELSE $column END";
+        
+        if (++$alreadyChangedCount < $changedColumnsCount) {
+          $sql .= ",";
+        }
+      }
+      $sql .= " WHERE id IN (" . str_repeat("?,", $changedColumnsCount - 1) . "?);";
+
+      $stmt = $pdo->prepare($sql);
+
+      $params = [];
+
+      //bind values
+      $bindedParamsCount = 0;
+      foreach($changes as $column => $columnChanges) {
+        foreach($columnChanges as $id => $newValue) {
+          $params[] = $id;
+          $params[] = $newValue;
+
+          $stmt->bindValue(++$bindedParamsCount, $id, PDO::PARAM_INT);
+          $stmt->bindValue(++$bindedParamsCount, $newValue, is_int($newValue) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+      }
+      foreach($ids as $id => $_) {
+        $params[] = $id;
+        $stmt->bindValue(++$bindedParamsCount, $id, PDO::PARAM_INT);
+      }
+
+      try {
+        $stmt->execute();
+        return "Products updated successfully!";
+      } catch(PDOException $e) {
+        return ["Database error: " . $e->getMessage(), "SQL: $sql", $params];
+      } 
+    }
+
     //private helper functions
 
     private static function addFiltersToQuery(&$sql, $filters) {
       if (!empty($filters)) {
         $sql .= " WHERE ";
-        $filter_count = count($filters);
-        $i = 0;
-        foreach ($filters as $key => $value) {
-          //$value[0] is the operator, $value[1] is the value
-          if ($value[0] === "BETWEEN") {
-            $sql .= "product.$key BETWEEN :${key}_min AND :${key}_max";
+        $filtersCount = count($filters);
+        $addedFiltersCount = 0;
+        foreach ($filters as $column => $filter) {
+          //$filter[0] is the operator, $filter[1] is the value
+          if ($filter[0] === "BETWEEN") {
+            $sql .= "product.$column BETWEEN :${column}_min AND :${column}_max";
           } else {
-            $sql .= "product.$key $value[0] :$key"; 
+            //TODO: add handling operators as enums
+            $sql .= "product.$column $filter[0] :$column"; 
           }
-          if ($i++ < $filter_count - 1) {
+
+          if (++$addedFiltersCount < $filtersCount) {
             $sql .= " AND ";
           }
         }
@@ -126,13 +189,13 @@
     }
 
     private static function bindFilterValues($stmt, $filters) {
-      foreach ($filters as $key => $value) {
-        //$value[0] is the operator, $value[1] is the value
-        if ($value[0] === "BETWEEN") {
-          $stmt->bindValue("${key}_min", $value[1][0], $value[2]);
-          $stmt->bindValue("${key}_max", $value[1][1], $value[2]);
+      foreach ($filters as $column => $filter) {
+        //$filter[0] is the operator, $filter[1] is the value
+        if ($filter[0] === "BETWEEN") {
+          $stmt->bindValue("${column}_min", $filter[1][0], is_int($filter[1][0]) ? PDO::PARAM_INT : PDO::PARAM_STR);
+          $stmt->bindValue("${column}_max", $filter[1][1], is_int($filter[1][1]) ? PDO::PARAM_INT : PDO::PARAM_STR);
         } else {
-          $stmt->bindValue($key, $value[1], $value[2]);
+          $stmt->bindValue($column, $filter[1], is_int($filter[1]) ? PDO::PARAM_INT : PDO::PARAM_STR);
         }
       }
     }
@@ -175,6 +238,10 @@
         self::bindPaginationValues($stmt, $page, $limit);
 
       return $stmt;
+    }
+
+    private static function isValidColumn($column) {
+      return array_key_exists($column, self::ORDER_BY_COLUMNS) || array_key_exists($column, self::OTHER_COLUMNS);
     }
   }
 ?>

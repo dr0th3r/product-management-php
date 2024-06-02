@@ -40,3 +40,19 @@ th, td {
   flex-direction: column;
   margin-right: 1rem;
 }
+
+.hidden {
+  display: none;
+}
+
+.edited {
+  user-select: none;
+}
+
+td > input, td > textarea {
+  background-color: transparent;
+  border: none;
+  outline: none;
+  font-size: .9rem;
+  min-width: 0;
+}

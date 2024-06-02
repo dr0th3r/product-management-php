@@ -3,9 +3,23 @@
     <input type="hidden" name="<?= $name ?>" value="<?= $value ?>">
   <?php endforeach; ?>
   <input type="text" name="search" placeholder="Search" value="">
-  <input type="number" name="price_min" id="price-min" value="<?= $filteringOptions['price_min'] ?>">
-  <input type="number" name="price_max" id="price-max" value="<?= $filteringOptions['price_max'] ?>">
-  <select name="product_type">
+  <input 
+    type="number" 
+    name="price_min" 
+    id="price-min" 
+    <?php if ($priceMin != $filteringOptions['price_min']) echo "value=$priceMin" ?>
+    placeholder="Min price"
+    max="<?= $filteringOptions['price_max'] ?>"
+  >
+  <input 
+    type="number" 
+    name="price_max" 
+    id="price-max" 
+    <?php if ($priceMax != $filteringOptions['price_max']) echo "value=$priceMax" ?>
+    placeholder="Max price"
+    min="<?= $filteringOptions['price_min'] ?>"
+  >
+  <select name="product_type" id="product-type">
     <option value="">All product types</option>
     <?php foreach ($filteringOptions["product_types"] as $productType): ?>
       <option 
@@ -16,7 +30,7 @@
       </option>
     <?php endforeach; ?>
   </select>
-  <select name="manufacturer">
+  <select name="manufacturer" id="manufacturer">
     <option value="">All manufacturers</option>
     <?php foreach ($filteringOptions["manufacturers"] as $manufacturer): ?>
       <option 

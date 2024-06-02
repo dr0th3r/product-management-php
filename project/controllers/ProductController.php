@@ -4,13 +4,22 @@
   class ProductController {
     public function getFilterMenu() {      
       $hiddenInputs = [];
-      foreach (["order_by", "order", "page"] as $key => $value) {
-        if (!empty($_GET[$key])) {
-          $hiddenInputs[$key] = $_GET[$key];
+      foreach (["order_by", "order", "page"] as $queryParam => $_) {
+        if (!empty($_GET[$queryParam])) {
+          $hiddenInputs[$queryParam] = $_GET[$queryParam];
         }
       }
 
       $filteringOptions = Product::getFilteringOptions();
+
+      $priceMin = floor(empty($_GET["price_min"]) ? $filteringOptions["price_min"] : $_GET["price_min"]);
+      $priceMax = ceil(empty($_GET["price_max"]) ? $filteringOptions["price_max"] : $_GET["price_max"]);
+
+      if ($priceMin > $priceMax) {
+        $tmp = $priceMin;
+        $priceMin = $priceMax;
+        $priceMax = $tmp;
+      }
 
       $selectedProductType = $_GET["product_type"] ?? "";
       $selectedManufacturer = $_GET["manufacturer"] ?? "";
@@ -72,9 +81,13 @@
       include "views/ProductTableBody.php";
     }
 
+    public function editProducts($changes) {
+      return Product::editProducts($changes);
+    }
+
     private static function parseFilters() {
-      $priceMin = empty($_GET["price_min"]) ? 0 : intval($_GET["price_min"]);
-      $priceMax = empty($_GET["price_max"]) ? PHP_INT_MAX : intval($_GET["price_max"]);
+      $priceMin = empty($_GET["price_min"]) ? 0 : floor($_GET["price_min"]);
+      $priceMax = empty($_GET["price_max"]) ? PHP_INT_MAX : ceil($_GET["price_max"]);
 
       if ($priceMin > $priceMax) {
         $tmp = $priceMin;
@@ -84,16 +97,16 @@
       
       $filters = [];
       if (!empty($_GET["search"])) {
-        $filters["code"] = ["LIKE", "%{$_GET['search']}%", PDO::PARAM_STR];
+        $filters["code"] = ["LIKE", "%{$_GET['search']}%"];
       }
       if ($priceMin != 0 || $priceMax != PHP_INT_MAX) {
-        $filters["price"] = ["BETWEEN", [$priceMin, $priceMax], PDO::PARAM_INT];
+        $filters["price"] = ["BETWEEN", [$priceMin, $priceMax]];
       }
       if (!empty($_GET["product_type"])) {
-        $filters["product_type"] = ["=", $_GET["product_type"], PDO::PARAM_INT];
+        $filters["product_type"] = ["=", $_GET["product_type"]];
       }
       if (!empty($_GET["manufacturer"])) {
-        $filters["manufacturer"] = ["=", $_GET["manufacturer"], PDO::PARAM_INT];
+        $filters["manufacturer"] = ["=", $_GET["manufacturer"]];
       }
 
       return $filters;

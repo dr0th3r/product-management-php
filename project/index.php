@@ -24,6 +24,8 @@
     ?>
   </table>
 
+  <button id="edit-btn">Edit</button>
+
   <script src="public/script.js"></script>
 </body>
 </html>
