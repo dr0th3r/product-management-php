@@ -13,18 +13,23 @@
   <link rel="stylesheet" href="public/style.css">
 </head>
 <body>
-  <?php 
-    $controller->getFilterMenu(); 
-    $controller->getPageNav();
-  ?>
-  <table>
-    <?php
-      $controller->getTableHead();
-      $controller->getTableBody();
-    ?>
-  </table>
-
-  <button id="edit-btn">Edit</button>
+  <div class="container">
+    <aside>
+      <div>
+        <?php 
+          $controller->getFilterMenu(); 
+          $controller->getPageNav();
+        ?>
+      </div>
+      <button id="edit-btn">Upravit</button>
+    </aside>
+    <table>
+      <?php
+        $controller->getTableHead();
+        $controller->getTableBody();
+      ?>
+    </table>
+  </div>
 
   <script src="public/script.js"></script>
 </body>

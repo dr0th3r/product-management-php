@@ -21,8 +21,24 @@
         $priceMax = $tmp;
       }
 
-      $selectedProductType = $_GET["product_type"] ?? "";
-      $selectedManufacturer = $_GET["manufacturer"] ?? "";
+      $selectedProductTypeId = $_GET["product_type"] ?? "";
+      $selectedManufacturerId = $_GET["manufacturer"] ?? "";
+      $selectedProductType = "";
+      $selectedManufacturer = "";
+
+      foreach ($filteringOptions["product_types"] as $productType) {
+        if ($productType["id"] == $selectedProductTypeId) {
+          $selectedProductType = $productType["name"];
+          break;
+        }
+      }
+
+      foreach ($filteringOptions["manufacturers"] as $manufacturer) {
+        if ($manufacturer["id"] == $selectedManufacturerId) {
+          $selectedManufacturer = $manufacturer["name"];
+          break;
+        }
+      }
 
       include "views/ProductFilterMenu.php";
     }
@@ -32,22 +48,29 @@
       $currentPage = $_GET["page"] ?? 1;
 
       if ($currentPage > 1) {
+        $firstPageQuery = http_build_query(["page" => 1] + $_GET);
+      }
+      if ($currentPage > 2) {
         $previousPageQuery = http_build_query(["page" => $currentPage - 1] + $_GET);
-        echo "<a href='?{$previousPageQuery}'>Previous page</a>";
+      }
+      if ($currentPage < ($pageCount - 1)) {
+        $nextPageQuery = http_build_query(["page" => $currentPage + 1] + $_GET);
       }
       if ($currentPage < $pageCount) {
-        $nextPageQuery = http_build_query(["page" => $currentPage + 1] + $_GET);
-        echo "<a href='?{$nextPageQuery}'>Next page</a>";
+        $lastPageQuery = http_build_query(["page" => $pageCount] + $_GET);
       }
+
+      include "views/ProductPageNav.php";
     }
 
     public function getTableHead() {  
-      echo "<thead><tr>";
-
       $currentOrderByColumn = $_GET["order_by"] ?? Product::DEFAULT_ORDER_BY_COLUMN;
       $isCurrentOrderAsc = ($_GET["order"] ?? "asc") == "asc";
 
-      foreach (Product::ORDER_BY_COLUMNS as $key => $value) {
+      $columns = Product::ORDER_BY_COLUMNS + Product::OTHER_COLUMNS;
+      $queries = [];
+
+      foreach (Product::ORDER_BY_COLUMNS as $key => $_) {
         $isCurrentOrderByColumn = $currentOrderByColumn == $key;
 
         $newQueryParams = [];
@@ -58,16 +81,10 @@
         $newQueryParams["page"] =
           ($isCurrentOrderByColumn && !empty($_GET["page"])) ? $_GET["page"] : 1;
 
-        $queryString = http_build_query($newQueryParams + $_GET);
-
-        echo "<th><a href='?{$queryString}'>{$value}</a></th>";
+        $queries[] = http_build_query($newQueryParams + $_GET);
       }
 
-      foreach (Product::OTHER_COLUMNS as $value) {
-        echo "<th>{$value}</th>";
-      }
-
-      echo "</tr></thead>";
+      include "views/ProductTableHead.php";
     }
 
     public function getTableBody() {

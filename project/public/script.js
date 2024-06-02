@@ -1,3 +1,4 @@
+//show more hndling
 const showMoreBtns = document.querySelectorAll(".show-more-btn");
 
 showMoreBtns.forEach((btn) => {
@@ -12,6 +13,54 @@ showMoreBtns.forEach((btn) => {
   });
 });
 
+//select search
+const searchableSelects = document.querySelectorAll(".searchable-select");
+searchableSelects.forEach((select) => {
+  const optionList = select.querySelector(".search-options");
+  const searchInput = select.querySelector(".search-input");
+  const idInput = select.querySelector(".id-input");
+
+  let wasOptionSelected = false;
+
+  optionList.addEventListener("mousedown", (e) => {
+    idInput.value = e.target.dataset.id;
+    searchInput.value = e.target.textContent;
+    wasOptionSelected = true;
+  });
+
+  searchInput.addEventListener("focus", () => {
+    select.classList.add("searching");
+    searchInput.value = "";
+    filterOptions(optionList.children, "");
+  });
+
+  searchInput.addEventListener("blur", (e) => {
+    select.classList.remove("searching");
+    if (!wasOptionSelected) {
+      searchInput.value = "";
+      idInput.value = "";
+    }
+    //back to default
+    wasOptionSelected = false;
+  });
+
+  searchInput.addEventListener("input", () =>
+    filterOptions(optionList.children, searchInput.value.toLowerCase())
+  );
+});
+
+function filterOptions(options, searchValue) {
+  for (const option of options) {
+    const optionText = option.textContent.toLowerCase();
+    if (optionText.includes(searchValue)) {
+      option.classList.remove("hidden");
+    } else {
+      option.classList.add("hidden");
+    }
+  }
+}
+
+//table editing
 const EDITED_CLASS = "edited";
 //for some reason there is 92 instead of 100
 const DESCRIPTION_SHORT_LENGTH = 92;
@@ -21,7 +70,7 @@ let isEditing = false;
 
 let changes = {};
 
-const selectProductTypeTemplate = getSelectElTemplate("product-type");
+const selectProductTypeTemplate = getSelectElTemplate("product_type");
 const selectManufacturerTemplate = getSelectElTemplate("manufacturer");
 
 const productTypes = getTextValueFromOptionIds(selectProductTypeTemplate);
@@ -97,7 +146,7 @@ function newInput(td, newTd, rowId, type) {
   newInput.value = td.textContent;
   newTd.appendChild(newInput);
 
-  newInput.addEventListener("focusout", (e) => {
+  newInput.addEventListener("blur", (e) => {
     td.classList.remove("hidden");
 
     if (td.textContent !== e.target.value) {
@@ -134,7 +183,7 @@ function newSelect(td, newTd, rowId, template, idToValue) {
 
   newTd.appendChild(newSelect);
 
-  newSelect.addEventListener("focusout", (e) => {
+  newSelect.addEventListener("blur", (e) => {
     td.classList.remove("hidden");
 
     const id = e.target.value - 1;
@@ -165,7 +214,7 @@ function newTextarea(td, newTd, rowId) {
 
   newTd.appendChild(newTextarea);
 
-  newTextarea.addEventListener("focusout", (e) => {
+  newTextarea.addEventListener("blur", (e) => {
     td.classList.remove("hidden");
 
     if (textareaValue !== e.target.value) {
@@ -193,7 +242,7 @@ function setChange(rowId, className, newValue, oldValue) {
 }
 
 async function saveChanges() {
-  if (!changes) return;
+  if (Object.keys(changes).length === 0) return;
 
   console.log(changes);
 

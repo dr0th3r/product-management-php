@@ -10,18 +10,18 @@
     public $description;
 
     const ORDER_BY_COLUMNS = [
-      "code" => "Code",
-      "price" => "Price",
-      "product_type" => "Product Type",
-      "manufacturer" => "Manufacturer",
+      "code" => "Kód",
+      "price" => "Cena",
+      "product_type" => "Typ produktu",
+      "manufacturer" => "Výrobce",
     ];
     const OTHER_COLUMNS = [
-      "description" => "Description",
+      "description" => "Popis",
     ];
 
     const DEFAULT_ORDER_BY_COLUMN = "code";
     const DEFAULT_ORDER = "asc";
-    const DEFAULT_LIMIT = 5;
+    const DEFAULT_LIMIT = 10;
 
     public static function getFiltered(
       $filters = [], 

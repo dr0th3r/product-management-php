@@ -13,7 +13,7 @@
         <span class="description-short"><?= $descriptionShort ?></span>
         <span class="description-dots visible">...</span>
         <span class="description-rest"><?= $descriptionRest ?></span>
-        <button class="show-more-btn">Show More</button>
+        <button class="show-more-btn">Zobrazit více</button>
       </td>
     </tr>
   <?php endforeach; ?>
