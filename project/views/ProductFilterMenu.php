@@ -57,6 +57,6 @@
         <li data-id="<?= $manufacturer["id"] ?>"><?= $manufacturer["name"] ?></li>
       <?php endforeach; ?>
     </ul>
-  </div>
-  <button type="submit" class="show-results-btn">Zobrazit výsledky</button>
+  </div>  
+  <button type="submit" id="show-results-btn">Zobrazit výsledky</button>
 </form>

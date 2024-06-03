@@ -18,7 +18,7 @@ const searchableSelects = document.querySelectorAll(".searchable-select");
 //we add ability to search for options to base inputs
 searchableSelects.forEach((select) => addSearchability(select));
 
-function addSearchability(select, onSelect) {
+function addSearchability(select, onSelect, onBlur) {
   const optionList = select.querySelector(".search-options");
   const searchInput = select.querySelector(".search-input");
   const idInput = select.querySelector(".id-input");
@@ -39,7 +39,7 @@ function addSearchability(select, onSelect) {
     filterOptions(optionList.children, "");
   });
 
-  searchInput.addEventListener("blur", (e) => {
+  searchInput.addEventListener("blur", () => {
     select.classList.remove("searching");
     if (!wasOptionSelected) {
       searchInput.value = "";
@@ -47,6 +47,8 @@ function addSearchability(select, onSelect) {
     }
     //back to default
     wasOptionSelected = false;
+
+    onBlur && onBlur();
   });
 
   searchInput.addEventListener("input", () =>
@@ -71,6 +73,7 @@ const EDITED_CLASS = "edited";
 const DESCRIPTION_SHORT_LENGTH = 92;
 
 const editBtn = document.getElementById("edit-btn");
+const cancelBtn = document.getElementById("cancel-btn");
 let isEditing = false;
 
 let changes = {};
@@ -78,22 +81,30 @@ let changes = {};
 const selectProductTypeTemplate = getSelectElTemplate("product_type");
 const selectManufacturerTemplate = getSelectElTemplate("manufacturer");
 
-//gets options to object where key is textContent and value is id
+//gets options to object which stores id to value and value to id mapping
 const productTypes = getOptions(selectProductTypeTemplate);
 const manufacturers = getOptions(selectManufacturerTemplate);
 
 const tbody = document.querySelector("tbody");
 
+cancelBtn.addEventListener("click", undoChanges);
+
 editBtn.addEventListener("click", () => {
   if (!isEditing) {
     isEditing = true;
     editBtn.textContent = "Uložit";
+    cancelBtn.classList.remove("hidden");
   } else {
-    isEditing = false;
-    editBtn.textContent = "Upravit";
+    stopEditing();
     saveChanges();
   }
 });
+
+function stopEditing() {
+  isEditing = false;
+  editBtn.textContent = "Upravit";
+  cancelBtn.classList.add("hidden");
+}
 
 tbody.addEventListener("click", (e) => {
   if (!isEditing) return;
@@ -122,7 +133,10 @@ function getOptions(select) {
   const options = select.querySelector(".search-options");
 
   return Array.from(options.children).reduce((acc, option) => {
-    acc[option.textContent] = option.dataset.id;
+    const id = option.dataset.id;
+    const value = option.textContent;
+    acc[id] = value;
+    acc[value] = id;
     return acc;
   }, {});
 }
@@ -167,11 +181,11 @@ function newInput(td, newTd, rowId, type) {
       if (isNaN(numberValue)) {
         setChange(rowId, td.className, e.target.value, td.textContent);
 
-        td.textContent = e.target.value;
+        updateInput(td, e.target.value);
       } else {
         setChange(rowId, td.className, numberValue, td.textContent);
 
-        td.textContent = numberValue.toFixed(2);
+        updateInput(td, numberValue.toFixed(2));
       }
     }
 
@@ -185,32 +199,56 @@ function newInput(td, newTd, rowId, type) {
   td.classList.add("hidden");
 }
 
-function newSelect(td, newTd, rowId, template, textContentToId) {
+function updateInput(td, newValue) {
+  td.textContent = newValue;
+}
+
+function newSelect(td, newTd, rowId, template, idValueBiMap) {
   const newSelect = template.cloneNode(true);
 
   newTd.append(newSelect);
 
-  addSearchability(newSelect, (selectedOption) => {
-    td.classList.remove("hidden");
-    if (td.textContent !== selectedOption.textContent) {
-      setChange(
-        rowId,
-        td.className,
-        selectedOption.dataset.id,
-        textContentToId[td.textContent]
-      );
+  //variable to keep track if an option was chosen or the input has been left empty
+  let wasOptionSelected = false;
 
-      td.textContent = selectedOption.textContent;
+  addSearchability(
+    newSelect,
+    (selectedOption) => {
+      td.classList.remove("hidden");
+      if (td.textContent !== selectedOption.textContent) {
+        setChange(
+          rowId,
+          td.className,
+          selectedOption.dataset.id,
+          //we map textContent (value) to id of an option using bidirectional map
+          idValueBiMap[td.textContent]
+        );
+
+        updateSelect(td, selectedOption.textContent);
+
+        wasOptionSelected = true;
+      }
+
+      newTd.remove();
+    },
+    () => {
+      //if no option was selected we remove the select and go back to initial state
+      if (!wasOptionSelected) {
+        td.classList.remove("hidden");
+        newTd.remove();
+      }
     }
-
-    newTd.remove();
-  });
+  );
 
   const searchInput = newSelect.querySelector(".search-input");
 
   td.after(newTd);
   searchInput.focus();
   td.classList.add("hidden");
+}
+
+function updateSelect(td, newValue) {
+  td.textContent = newValue;
 }
 
 function newTextarea(td, newTd, rowId) {
@@ -229,12 +267,7 @@ function newTextarea(td, newTd, rowId) {
     td.classList.remove("hidden");
 
     if (textareaValue !== e.target.value) {
-      const description = e.target.value;
-      const short = description.slice(0, DESCRIPTION_SHORT_LENGTH);
-      const rest = description.slice(DESCRIPTION_SHORT_LENGTH);
-
-      descriptionShort.textContent = short;
-      descriptionRest.textContent = rest;
+      updateTextarea(td, e.target.value, descriptionShort, descriptionRest);
 
       setChange(rowId, "description", description, textareaValue);
     }
@@ -245,6 +278,18 @@ function newTextarea(td, newTd, rowId) {
   td.after(newTd);
   newTextarea.focus();
   td.classList.add("hidden");
+}
+
+function updateTextarea(td, newValue, descriptionShort, descriptionRest) {
+  if (!descriptionShort) {
+    descriptionShort = td.querySelector(".description-short");
+  }
+  if (!descriptionRest) {
+    descriptionRest = td.querySelector(".description-rest");
+  }
+
+  descriptionShort.textContent = newValue.slice(0, DESCRIPTION_SHORT_LENGTH);
+  descriptionRest.textContent = newValue.slice(DESCRIPTION_SHORT_LENGTH);
 }
 
 function setChange(rowId, className, newValue, oldValue) {
@@ -282,7 +327,7 @@ async function saveChanges() {
 
     changes = {};
   } catch (error) {
-    console.error(error);
+    undoChanges();
     showErrorModal(error);
   }
 }
@@ -308,4 +353,33 @@ function showErrorModal(errorMsg) {
   modal.append(closeBtn);
 
   document.body.append(modal);
+}
+
+function undoChanges() {
+  Object.entries(changes).forEach(([column, rows]) => {
+    Object.entries(rows).forEach(([rowId, value]) => {
+      //we have to use [] because id starts with a number
+      const td = document.querySelector(`[id='${rowId}'] .${column}`);
+
+      switch (column) {
+        case "description":
+          updateTextarea(td, value.oldValue);
+          break;
+        case "product_type":
+          //we have to map id to value
+          updateSelect(td, productTypes[value.oldValue]);
+          break;
+        case "manufacturer":
+          //we have to map id to value
+          updateSelect(td, manufacturers[value.oldValue]);
+          break;
+        default:
+          updateInput(td, value.oldValue);
+      }
+    });
+  });
+
+  changes = {};
+
+  stopEditing();
 }

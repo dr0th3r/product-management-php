@@ -2,6 +2,7 @@
 
 :root {
   --p: #0575E5;
+  --error: #cf1616;
   --radius: 8px;
 }
 
@@ -107,8 +108,13 @@ td > input, td > textarea {
   background-color: transparent;
   border: none;
   outline: none;
-  font-size: .9rem;
+  font-size: 1rem;
   min-width: 0;
+}
+
+td > textarea {
+  width: 100%;
+  resize: vertical;
 }
 
 .show-more-btn {
@@ -154,10 +160,6 @@ h2 {
   padding-top:0;
   margin-top: 0;
   margin-bottom: 0rem;
-}
-
-select {
-  cursor: pointer;
 }
 
 .searchable-select {
@@ -207,11 +209,20 @@ select {
   background-color: #eee;
 }
 
-.show-results-btn {
+#show-results-btn {
   margin-top: .3rem;
 }
 
-.show-results-btn, #edit-btn {
+.edit-btns {
+  display: flex;
+  gap: .5rem;
+}
+
+.edit-btns > button {
+  width: 100%;
+}
+
+#show-results-btn, #edit-btn, #cancel-btn {
   background-color: var(--p);
   color: #fff;
   font-weight: bold;
@@ -219,8 +230,13 @@ select {
   transition: all .3s ease-out;
 }
 
-.show-results-btn:hover, #edit-btn:hover {
+#show-results-btn:hover, #edit-btn:hover {
   background-color: #0569ce;
+}
+
+#cancel-btn {
+  background-color: var(--error);
+  border: 1px solid var(--error);
 }
 
 p {
@@ -239,15 +255,23 @@ p {
   background-color: #fff;
   border-radius: var(--radius);
   padding: 1rem;
-  border: 1px solid #cf1616;
+  border: 1px solid var(--error);
 }
 
 .close-modal-btn {
   align-self: flex-end;
-  background-color: #cf1616;
+  background-color: var(--error);
   color: #fff;
   border: none;
   padding: .5rem;
   font-weight: bold;
   cursor: pointer;
+}
+
+.edited > .searchable-select > .search-input {
+  border: none;
+  outline: none;
+  box-sizing: border-box;
+  padding: .5rem;
+  font-size: 1rem;
 }
