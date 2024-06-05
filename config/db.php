@@ -24,4 +24,10 @@ enum ComparisonOperator: string {
   case Like = "LIKE";
   case Between = "BETWEEN";
 }
+
+//true because we want similar behavior to hash set
+enum Order: string {
+  case Asc = "asc";
+  case Desc = "desc";
+}
 ?>

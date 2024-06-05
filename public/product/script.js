@@ -8,8 +8,8 @@ showMoreBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
     btn.textContent =
       btn.textContent === "Zobrazit více" ? "Zobrzit méně" : "Zobrazit více";
-    descriptionDots.classList.toggle("visible");
-    descriptionRest.classList.toggle("visible");
+    descriptionDots.classList.toggle("hidden");
+    descriptionRest.classList.toggle("hidden");
   });
 });
 
@@ -178,14 +178,19 @@ function newInput(td, newTd, rowId, type) {
     if (td.textContent !== e.target.value) {
       const numberValue = parseFloat(e.target.value);
 
-      if (isNaN(numberValue)) {
+      //this should never happen because we have type="number" but just in case
+      if (type === "number" && isNaN(numberValue)) {
+        showErrorModal("Vstup musí být číslo");
+        newInput.focus();
+        return;
+      } else if (type === "number") {
+        setChange(rowId, td.className, numberValue, parseFloat(td.textContent));
+
+        updateInput(td, numberValue.toFixed(2));
+      } else {
         setChange(rowId, td.className, e.target.value, td.textContent);
 
         updateInput(td, e.target.value);
-      } else {
-        setChange(rowId, td.className, numberValue, td.textContent);
-
-        updateInput(td, numberValue.toFixed(2));
       }
     }
 
@@ -266,8 +271,9 @@ function newTextarea(td, newTd, rowId) {
   newTextarea.addEventListener("blur", (e) => {
     td.classList.remove("hidden");
 
-    if (textareaValue !== e.target.value) {
-      updateTextarea(td, e.target.value, descriptionShort, descriptionRest);
+    const description = e.target.value;
+    if (textareaValue !== description) {
+      updateTextarea(td, description, descriptionShort, descriptionRest);
 
       setChange(rowId, "description", description, textareaValue);
     }
@@ -287,6 +293,23 @@ function updateTextarea(td, newValue, descriptionShort, descriptionRest) {
   if (!descriptionRest) {
     descriptionRest = td.querySelector(".description-rest");
   }
+  //descriptionDots and showMoreBtn are not used in any function calling this one, so having it as parameter would be useless
+  const descriptionDots = td.querySelector(".description-dots");
+  const showMoreBtn = td.querySelector(".show-more-btn");
+
+  if (newValue.length <= DESCRIPTION_SHORT_LENGTH) {
+    descriptionShort.textContent = newValue;
+    descriptionDots.classList.add("hidden");
+    showMoreBtn.classList.add("hidden");
+    descriptionRest.textContent = "";
+    return;
+  }
+
+  //if descriptionDots is hidden, showMoreBtn is hidden as well
+  if (descriptionDots.classList.contains("hidden")) {
+    descriptionDots.classList.remove("hidden");
+    showMoreBtn.classList.remove("hidden");
+  }
 
   descriptionShort.textContent = newValue.slice(0, DESCRIPTION_SHORT_LENGTH);
   descriptionRest.textContent = newValue.slice(DESCRIPTION_SHORT_LENGTH);
@@ -300,8 +323,6 @@ function setChange(rowId, className, newValue, oldValue) {
 async function saveChanges() {
   if (Object.keys(changes).length === 0) return;
 
-  console.log(changes);
-
   const newValues = Object.keys(changes).reduce((acc, key) => {
     acc[key] = Object.keys(changes[key]).reduce((acc, rowId) => {
       acc[rowId] = changes[key][rowId].newValue;
@@ -311,7 +332,7 @@ async function saveChanges() {
   }, {});
 
   try {
-    const response = await fetch("edit.php", {
+    const response = await fetch("/products/edit", {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -319,9 +340,8 @@ async function saveChanges() {
       body: JSON.stringify(newValues),
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
+      const data = await response.json();
       throw new Error(data?.error || "Neočekávaná chyba při ukládání změn.");
     }
 
@@ -330,29 +350,6 @@ async function saveChanges() {
     undoChanges();
     showErrorModal(error);
   }
-}
-
-function showErrorModal(errorMsg) {
-  const modal = document.createElement("div");
-
-  modal.classList.add("modal");
-
-  modal.innerHTML = `
-      <h2>Chyba</h2>
-      <p>${errorMsg}</p>
-  `;
-
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "close-modal-btn";
-  closeBtn.textContent = "Zavřít";
-
-  closeBtn.addEventListener("click", () => {
-    modal.remove();
-  });
-
-  modal.append(closeBtn);
-
-  document.body.append(modal);
 }
 
 function undoChanges() {
@@ -382,4 +379,27 @@ function undoChanges() {
   changes = {};
 
   stopEditing();
+}
+
+function showErrorModal(errorMsg) {
+  const modal = document.createElement("div");
+
+  modal.classList.add("modal");
+
+  modal.innerHTML = `
+      <h2>Chyba</h2>
+      <p>${errorMsg}</p>
+  `;
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "close-modal-btn";
+  closeBtn.textContent = "Zavřít";
+
+  closeBtn.addEventListener("click", () => {
+    modal.remove();
+  });
+
+  modal.append(closeBtn);
+
+  document.body.append(modal);
 }

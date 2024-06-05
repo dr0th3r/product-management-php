@@ -1,0 +1,19 @@
+CREATE TABLE product_type (
+  id INT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(255) NOT NULL,
+  PRIMARY KEY (id)
+);
+CREATE TABLE manufacturer (
+  id INT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(255) NOT NULL,
+  PRIMARY KEY (id)
+);
+CREATE TABLE product (
+  id INT NOT NULL AUTO_INCREMENT,
+  product_type INT NOT NULL,
+  manufacturer INT NOT NULL,
+  price DECIMAL(8, 2) NOT NULL,
+  code VARCHAR(255) NOT NULL UNIQUE,
+  description TEXT NOT NULL,
+  PRIMARY KEY (id)
+);

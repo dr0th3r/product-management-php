@@ -2,6 +2,7 @@
 
 :root {
   --p: #0575E5;
+  --s: #eee;
   --error: #cf1616;
   --radius: 8px;
 }
@@ -42,8 +43,11 @@ ol li {
   justify-content: center;
 }
 
-ol li a {
+a {
   text-decoration: none;
+}
+
+ol li a {
   color: black;
   height: 100%;
   width: 100%;
@@ -63,7 +67,7 @@ form {
   gap: .2rem;
 }
 
-form input, form select, button {
+form input, form select, button, #export-btn {
   padding: .5rem;
   font-size: 1rem;
   border-radius: var(--radius);
@@ -84,7 +88,7 @@ table, th, td {
 }
 
 tr:nth-child(2n) {
-  background-color: #eee;
+  background-color: var(--s);
 }
 
 thead tr {
@@ -96,11 +100,10 @@ th, td {
   padding: 5px;
   text-align: left;
   max-width: 30vw;
-  height: 2rem;
+  height: 2.5rem;
 }
 
 th a {
-  text-decoration: none;
   color: #fff;
 }
 
@@ -125,13 +128,10 @@ td > textarea {
   cursor: pointer;
 }
 
-.description-rest, .description-dots {
-  display: none;
-}
-
-.visible {
+.description-dots, .description-rest {
   display: inline;
 }
+
 
 .filter-form {
   display: flex;
@@ -206,28 +206,38 @@ h2 {
 }
 
 .searching .search-options li:hover {
-  background-color: #eee;
+  background-color: var(--s);
 }
 
 #show-results-btn {
   margin-top: .3rem;
 }
 
-.edit-btns {
+.edit-export-btns {
   display: flex;
   gap: .5rem;
+  flex-wrap: wrap;
 }
 
-.edit-btns > button {
-  width: 100%;
+.edit-export-btns > button {
+  flex: 1;
 }
 
-#show-results-btn, #edit-btn, #cancel-btn {
+
+#show-results-btn, #edit-btn, #cancel-btn, #export-btn {
   background-color: var(--p);
   color: #fff;
   font-weight: bold;
   border: 1px solid var(--p);
   transition: all .3s ease-out;
+}
+
+#export-btn {
+  background-color: var(--s);
+  text-align: center;
+  color: black;
+  border: 1px solid var(--s);
+  width: 100%;
 }
 
 #show-results-btn:hover, #edit-btn:hover {

@@ -1,5 +1,5 @@
 <?php
-  require_once "config/db.php";
+  require_once "../config/db.php";
 
   class Product {
     public $id;
@@ -20,7 +20,7 @@
     ];
 
     const DEFAULT_ORDER_BY_COLUMN = "code";
-    const DEFAULT_ORDER = "asc";
+    const DEFAULT_ORDER = Order::Asc;
     const DEFAULT_LIMIT = 10;
 
     public static function getFiltered(
@@ -166,6 +166,11 @@
         $filtersCount = count($filters);
         $addedFiltersCount = 0;
         foreach ($filters as $column => $filter) {
+          /*
+            in this case i don't implement another checking if $column is valid as only valid columns are extraced
+            from the request. If we wanted another layer of security by checking if the column is in list of valid
+            columns for filtering (which in this case is the same as keys of sort_by_columns).
+          */
           //$filter[0] is the operator, $filter[1] is the value
           if ($filter[0] === ComparisonOperator::Between) {
             $sql .= "product.$column " . ComparisonOperator::Between->value . " :${column}_min AND :${column}_max";
@@ -182,6 +187,11 @@
 
     private static function bindFilterValues($stmt, $filters) {
       foreach ($filters as $column => $filter) {
+        /*
+          In this case I don't implement another checking if $column is valid as only valid columns are extraced
+          from the request. If we wanted another layer of security by checking if the column is in list of valid
+          columns for filtering (which in this case is the same as keys of ORDER_BY_COLUMNS).
+        */
         //$filter[0] is the operator, $filter[1] is the value
         if ($filter[0] === ComparisonOperator::Between) {
           $stmt->bindValue("${column}_min", $filter[1][0], is_int($filter[1][0]) ? PDO::PARAM_INT : PDO::PARAM_STR);
@@ -202,12 +212,13 @@
     }
 
     private static function addOrderingToQuery(&$sql, $orderBy, $order) {
-      if (!array_key_exists($orderBy, self::ORDER_BY_COLUMNS)) 
-        $orderBy = self::DEFAULT_ORDER_BY_COLUMN;
-      if ($order !== "asc" && $order !== "desc") 
-        $order = self::DEFAULT_ORDER;
+      /*
+        As well as with the filtering I don't implement validation of orderBy and order because they are
+        extracted and validated in the controller. If we wanted another layer of security by checking, we could
+        do it by checking $orderBy againts keys of ORDER_BY_COLUMNS and $order against values of Order enum.
+      */
 
-      $sql .= " ORDER BY product.$orderBy $order";
+      $sql .= " ORDER BY product.$orderBy $order->value";
     }
 
     private static function prepareQuery($pdo, &$sql, $filters = [], $orderBy = null, $order = null, $page = null, $limit = null) {

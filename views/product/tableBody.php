@@ -12,9 +12,11 @@
       ?>
       <td class="description">
         <span class="description-short"><?= $descriptionShort ?></span>
-        <span class="description-dots visible">...</span>
-        <span class="description-rest"><?= $descriptionRest ?></span>
-        <button class="show-more-btn">Zobrazit více</button>
+        <span 
+          class="description-dots <?= $descriptionRest ? "" : "hidden" ?>"
+        >...</span>
+        <span class="description-rest hidden"><?= $descriptionRest ?></span>
+        <button class="show-more-btn <?= $descriptionRest ? "" : "hidden" ?>">Zobrazit více</button>
       </td>
     </tr>
   <?php endforeach; ?>
