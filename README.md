@@ -1,6 +1,6 @@
 # Jak zprovoznit pomocí xampp
 
-1. zkopírujte soubory do Vámi vybrané složky v htdocs
+1. zkopírujte soubory do Vámi vybrané/vytvořené složky v htdocs
 2. spustťe xampp control panel
 3. přejděte do nastavení apache a v httpd.conf změntě DocumentRoot na htdocs/"vaše složka"/public
 4. spustě apache a mysql
