@@ -1,5 +1,6 @@
 <?php
 class Database {
+  // Change these constants to match your database configuration
   private const HOST = "localhost";
   private const USER = "root";
   private const PASSWORD = "";
