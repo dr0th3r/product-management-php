@@ -18,19 +18,20 @@
     <aside>
       <div>
         <?php 
-          $controller->getFilterMenu(); 
-          $controller->getPageNav();
+          $controller::getFilterMenu(); 
+          $controller::getPageNav();
         ?>
       </div>
       <div class="edit-btns">
         <button id="edit-btn">Upravit</button>
         <button id="cancel-btn" class="hidden">Neuložit</button>
       </div>
+      <a href="export.php">Export</a>
     </aside>
     <table>
       <?php
-        $controller->getTableHead();
-        $controller->getTableBody();
+        $controller::getTableHead();
+        $controller::getTableBody();
       ?>
     </table>
   </div>

@@ -4,7 +4,17 @@
   require_once "config/db.php";
 
   class ProductController {
-    public function getFilterMenu() {      
+    public static function getAllProducts() {
+      return Product::getFiltered(
+        self::parseFilters(),
+        orderBy: $_GET["order_by"] ?? Product::DEFAULT_ORDER_BY_COLUMN,
+        order: $_GET["order"] ?? Product::DEFAULT_ORDER,
+        page: 1,
+        limit: PHP_INT_MAX,
+      );
+    }
+
+    public static function getFilterMenu() {      
       $hiddenInputs = [];
       foreach (["order_by", "order", "page"] as $queryParam => $_) {
         if (!empty($_GET[$queryParam])) {
@@ -45,7 +55,7 @@
       include "views/ProductFilterMenu.php";
     }
 
-    public function getPageNav() {
+    public static function getPageNav() {
       $pageCount = ceil(Product::getProductCount(self::parseFilters()) / Product::DEFAULT_LIMIT);
       $currentPage = $_GET["page"] ?? 1;
 
@@ -65,7 +75,7 @@
       include "views/ProductPageNav.php";
     }
 
-    public function getTableHead() {  
+    public static function getTableHead() {  
       $currentOrderByColumn = $_GET["order_by"] ?? Product::DEFAULT_ORDER_BY_COLUMN;
       $isCurrentOrderAsc = ($_GET["order"] ?? "asc") == "asc";
 
@@ -91,7 +101,7 @@
       include "views/ProductTableHead.php";
     }
 
-    public function getTableBody() {
+    public static function getTableBody() {
       $products = Product::getFiltered(
         self::parseFilters(),
         orderBy: $_GET["order_by"] ?? Product::DEFAULT_ORDER_BY_COLUMN,
@@ -102,7 +112,7 @@
       include "views/ProductTableBody.php";
     }
 
-    public function editProducts($changes) {
+    public static function editProducts($changes) {
       if (empty($changes)) {
         http_response_code(400);
         return ["error" => "Nebyly poskytnuty žádné změny"];
