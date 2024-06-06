@@ -1,3 +1,13 @@
+INSERT INTO `product_type` (`id`, `name`)
+VALUES (1, 'Termodmychadla'),
+  (2, 'Vysokotlaká čerpadla'),
+  (3, 'Vstřikovací čerpadla'),
+  (4, 'Vstřikovače');
+INSERT INTO `manufacturer` (`id`, `name`)
+VALUES (1, 'Garret'),
+  (2, 'IHI'),
+  (3, 'Delphi'),
+  (4, 'Bosch');
 INSERT INTO `product` (
     `id`,
     `product_type`,
