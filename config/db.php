@@ -26,7 +26,6 @@ enum ComparisonOperator: string {
   case Between = "BETWEEN";
 }
 
-//true because we want similar behavior to hash set
 enum Order: string {
   case Asc = "asc";
   case Desc = "desc";

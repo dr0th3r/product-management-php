@@ -2,13 +2,6 @@
   require_once "../config/db.php";
 
   class Product {
-    public $id;
-    public $code;
-    public $price;
-    public $product_type;
-    public $manufacturer;
-    public $description;
-
     const ORDER_BY_COLUMNS = [
       "code" => "Kód",
       "price" => "Cena",
@@ -30,24 +23,25 @@
       $page = 1, 
       $limit = self::DEFAULT_LIMIT
     ) {
-      $pdo = Database::connect();
-
-      $sql = "
-        SELECT
-          product.*,
-          product_type.name as product_type_name,
-          manufacturer.name as manufacturer_name
-        FROM 
-          product
-        JOIN 
-          product_type ON product.product_type = product_type.id
-        JOIN
-          manufacturer ON product.manufacturer = manufacturer.id
-      ";
-
-      $stmt = self::prepareQuery($pdo, $sql, $filters, $orderBy, $order, $page, $limit);
-
       try {
+        $pdo = Database::connect();
+
+        $sql = "
+          SELECT
+            product.*,
+            product_type.name as product_type_name,
+            manufacturer.name as manufacturer_name
+          FROM 
+            product
+          JOIN 
+            product_type ON product.product_type = product_type.id
+          JOIN
+            manufacturer ON product.manufacturer = manufacturer.id
+        ";
+
+        //we prepare the query by adding filters, ordering and pagination
+        $stmt = self::prepareQuery($pdo, $sql, $filters, $orderBy, $order, $page, $limit);
+
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
       } catch(PDOException $e) {
@@ -56,34 +50,29 @@
     }
 
     public static function getFilteringOptions() {
-      $pdo = Database::connect();
-
-      $sql = "
-        SELECT MIN(price) as price_min, MAX(price) as price_max FROM product;
-        SELECT id, name FROM product_type;
-        SELECT id, name FROM manufacturer;
-      ";
-
-      $stmt = $pdo->query($sql);
-
       try {
-        $results = [];
-        do {
-          $data = [];
-          while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $data[] = $row;
-          }
-          if (!empty($data)) {
-            $results[] = $data;
-          }
-        } while ($stmt->nextRowset());
+        $pdo = Database::connect();
 
-        return [
-          "price_min" => $results[0][0]["price_min"],
-          "price_max" => $results[0][0]["price_max"],
-          "product_types" => $results[1],
-          "manufacturers" => $results[2]
-        ];
+        $sql = "
+          SELECT MIN(price) as price_min, MAX(price) as price_max FROM product;
+          SELECT id, name FROM product_type;
+          SELECT id, name FROM manufacturer;
+        ";
+
+        $stmt = $pdo->query($sql);
+
+        /*
+        since min and max prices are fetch in an associative array in the first row, we can do this
+        as options will be an associative array of price_min, price_max, product_types and manufacturers
+        */
+        $options = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->nextRowset();
+        //we want to fetch them as id-name pairs
+        $options["product_types"] = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+        $stmt->nextRowset();
+        $options["manufacturers"] = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        return $options;
       } catch(PDOException $e) {
         echo "Database error: " . $e->getMessage();
       }
@@ -92,13 +81,13 @@
     public static function getProductCount(
       $filters = [], 
     ) {
-      $pdo = Database::connect();
-
-      $sql = "SELECT COUNT(*) as count FROM product";
-
-      $stmt = self::prepareQuery($pdo, $sql, $filters);
-
       try {
+        $pdo = Database::connect();
+
+        $sql = "SELECT COUNT(*) as count FROM product";
+
+        $stmt = self::prepareQuery($pdo, $sql, $filters);
+
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC)["count"];
       } catch(PDOException $e) {
@@ -109,49 +98,64 @@
     public static function editProducts($changes = []) {
       if (empty($changes)) return;
 
-      $pdo = Database::connect();
-
-      $sql = "UPDATE product SET";
-
-      //add changes to query
-      $ids = [];
-      $changedColumnsCount = count($changes);
-      $alreadyChangedCount = 0;
-      foreach ($changes as $column => $columnChanges) {
-        if (!self::isValidColumn($column)) {
-          continue;
-        }
-
-        $sql .= " $column = CASE id";
-
-        foreach ($columnChanges as $id => $newValue) {
-          $ids[$id] = true; //we collect unique ids
-          $sql .= " WHEN ? THEN ?";
-        }
-        
-        $sql .= " ELSE $column END";
-        
-        if (++$alreadyChangedCount < $changedColumnsCount) {
-          $sql .= ",";
-        }
-      }
-      $sql .= " WHERE id IN (" . str_repeat("?,", count($ids) - 1) . "?);";
-
-      $stmt = $pdo->prepare($sql);
-
-      //bind values
-      $bindedParamsCount = 0;
-      foreach($changes as $column => $columnChanges) {
-        foreach($columnChanges as $id => $newValue) {
-          $stmt->bindValue(++$bindedParamsCount, $id, PDO::PARAM_INT);
-          $stmt->bindValue(++$bindedParamsCount, $newValue, is_int($newValue) ? PDO::PARAM_INT : PDO::PARAM_STR);
-        }
-      }
-      foreach($ids as $id => $_) {
-        $stmt->bindValue(++$bindedParamsCount, $id, PDO::PARAM_INT);
-      }
-
       try {
+        $pdo = Database::connect();
+
+        $sql = "UPDATE product SET";
+
+        //add changes to query
+        $ids = [];
+        $changedColumnsCount = count($changes);
+        $alreadyChangedCount = 0;
+        foreach ($changes as $column => $columnChanges) {
+          /*
+          for each changed column we check if the column is valid (unlike filters or ordering 
+          we don't check this in the controller) and if it is, we add the changes using the
+          CASE statement with the product's id as the condition
+          e.g. CASE id WHEN 1 THEN 100 WHEN 2 THEN 200 ELSE price END
+          */
+          if (!self::isValidColumn($column)) {
+            continue;
+          }
+
+          $sql .= " $column = CASE id";
+
+          foreach ($columnChanges as $id => $newValue) {
+            $ids[$id] = true; //we collect unique ids
+            $sql .= " WHEN ? THEN ?";
+          }
+          
+          $sql .= " ELSE $column END";
+          
+          //if this is not the last changed column, we have to add a comma
+          if (++$alreadyChangedCount < $changedColumnsCount) {
+            $sql .= ",";
+          }
+        }
+
+        /*
+        for each unique id we add a question mark (that will be used later for binding) 
+        so that we only work with the products that have been changed
+        */
+        $sql .= " WHERE id IN (" . str_repeat("?,", count($ids) - 1) . "?);";
+
+        $stmt = $pdo->prepare($sql);
+
+        //bind values
+        $bindedParamsCount = 0;
+        foreach($changes as $column => $columnChanges) {
+          foreach($columnChanges as $id => $newValue) {
+            //for each changed value we bind the product's id and the new value
+            $stmt->bindValue(++$bindedParamsCount, $id, PDO::PARAM_INT);
+            //the value can be either integer or string so we have to check the type
+            $stmt->bindValue(++$bindedParamsCount, $newValue, is_int($newValue) ? PDO::PARAM_INT : PDO::PARAM_STR);
+          }
+        }
+        //then we bind ids of changed products to the WHERE clause
+        foreach($ids as $id => $_) {
+          $stmt->bindValue(++$bindedParamsCount, $id, PDO::PARAM_INT);
+        }
+
         $stmt->execute();
       } catch(PDOException $e) {
         return ["error" => "Nastala neočekávaná chyba při ukládání změn"];
@@ -167,7 +171,7 @@
         $addedFiltersCount = 0;
         foreach ($filters as $column => $filter) {
           /*
-            in this case i don't implement another checking if $column is valid as only valid columns are extraced
+            in this case I don't implement another checking if $column is valid as only valid columns are extraced
             from the request. If we wanted another layer of security by checking if the column is in list of valid
             columns for filtering (which in this case is the same as keys of sort_by_columns).
           */

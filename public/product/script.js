@@ -18,11 +18,16 @@ const searchableSelects = document.querySelectorAll(".searchable-select");
 //we add ability to search for options to base inputs
 searchableSelects.forEach((select) => addSearchability(select));
 
+/*
+function that makes our custom select searchable
+and sets up functions for handling interaction with it
+*/
 function addSearchability(select, onSelect, onBlur) {
   const optionList = select.querySelector(".search-options");
   const searchInput = select.querySelector(".search-input");
   const idInput = select.querySelector(".id-input");
 
+  //variable to keep track if an option was chosen or the input has been left empty
   let wasOptionSelected = false;
 
   //we have to use mousedown because unlike click it fires before blur
@@ -41,6 +46,7 @@ function addSearchability(select, onSelect, onBlur) {
 
   searchInput.addEventListener("blur", () => {
     select.classList.remove("searching");
+    //blur event fires after mousedown se we can check if an option was selected
     if (!wasOptionSelected) {
       searchInput.value = "";
       idInput.value = "";
@@ -78,49 +84,15 @@ let isEditing = false;
 
 let changes = {};
 
-const selectProductTypeTemplate = getSelectElTemplate("product_type");
-const selectManufacturerTemplate = getSelectElTemplate("manufacturer");
+const selectProductTypeTemplate = getSelectTemplate("product_type");
+const selectManufacturerTemplate = getSelectTemplate("manufacturer");
 
 //gets options to object which stores id to value and value to id mapping
 const productTypes = getOptions(selectProductTypeTemplate);
 const manufacturers = getOptions(selectManufacturerTemplate);
 
-const tbody = document.querySelector("tbody");
-
-cancelBtn.addEventListener("click", undoChanges);
-
-editBtn.addEventListener("click", () => {
-  if (!isEditing) {
-    isEditing = true;
-    editBtn.textContent = "Uložit";
-    cancelBtn.classList.remove("hidden");
-  } else {
-    stopEditing();
-    saveChanges();
-  }
-});
-
-function stopEditing() {
-  isEditing = false;
-  editBtn.textContent = "Upravit";
-  cancelBtn.classList.add("hidden");
-}
-
-tbody.addEventListener("click", (e) => {
-  if (!isEditing) return;
-  let target = e.target;
-  if (target.tagName !== "TD") {
-    target = target.parentElement;
-  }
-
-  if (target.tagName !== "TD") return;
-
-  if (target.classList.contains(EDITED_CLASS)) return;
-
-  changeForInput(target);
-});
-
-function getSelectElTemplate(templateId) {
+//we create a template of our custom select with search functionality
+function getSelectTemplate(templateId) {
   const template = document.getElementById(templateId).cloneNode(true);
 
   //we remove label
@@ -129,9 +101,11 @@ function getSelectElTemplate(templateId) {
   return template;
 }
 
+//we get the options from our custom select with search functionality
 function getOptions(select) {
   const options = select.querySelector(".search-options");
 
+  //for each option we create a mapping from id to value and value to id
   return Array.from(options.children).reduce((acc, option) => {
     const id = option.dataset.id;
     const value = option.textContent;
@@ -141,6 +115,47 @@ function getOptions(select) {
   }, {});
 }
 
+const tbody = document.querySelector("tbody");
+
+cancelBtn.addEventListener("click", undoChanges);
+
+editBtn.addEventListener("click", () => {
+  if (!isEditing) {
+    startEditing();
+  } else {
+    stopEditing();
+    saveChanges();
+  }
+});
+
+function startEditing() {
+  isEditing = true;
+  editBtn.textContent = "Uložit";
+  cancelBtn.classList.remove("hidden");
+}
+
+function stopEditing() {
+  isEditing = false;
+  editBtn.textContent = "Upravit";
+  cancelBtn.classList.add("hidden");
+}
+
+//function that decides if we should start editing a cell
+tbody.addEventListener("click", (e) => {
+  if (!isEditing) return;
+  //we try to get some element that is td
+  let target = e.target;
+  if (target.tagName !== "TD") {
+    target = target.parentElement;
+  }
+  if (target.tagName !== "TD") return;
+
+  if (target.classList.contains(EDITED_CLASS)) return;
+
+  changeForInput(target);
+});
+
+//function that changes td for some kind of input (input, textarea, our custom select)
 function changeForInput(td) {
   const rowId = td.parentElement.id;
 
@@ -166,6 +181,7 @@ function changeForInput(td) {
   }
 }
 
+//function that creates new input element for editing a cell
 function newInput(td, newTd, rowId, type) {
   const newInput = document.createElement("input");
   newInput.type = type;
@@ -175,6 +191,7 @@ function newInput(td, newTd, rowId, type) {
   newInput.addEventListener("blur", (e) => {
     td.classList.remove("hidden");
 
+    //if the value is different we save the change
     if (td.textContent !== e.target.value) {
       const numberValue = parseFloat(e.target.value);
 
@@ -204,10 +221,13 @@ function newInput(td, newTd, rowId, type) {
   td.classList.add("hidden");
 }
 
+//function that updates the value of a cell after it has been edited by input element
+//NOTE: this function is just for consistency, because textarea and select have their own update functions
 function updateInput(td, newValue) {
   td.textContent = newValue;
 }
 
+//function that creates our custom select for editing a cell
 function newSelect(td, newTd, rowId, template, idValueBiMap) {
   const newSelect = template.cloneNode(true);
 
@@ -252,10 +272,12 @@ function newSelect(td, newTd, rowId, template, idValueBiMap) {
   td.classList.add("hidden");
 }
 
+//this function is for consistency as well (see updateInput), because textarea has its own update function
 function updateSelect(td, newValue) {
   td.textContent = newValue;
 }
 
+//function that creates textarea for editing a cell
 function newTextarea(td, newTd, rowId) {
   const newTextarea = document.createElement("textarea");
   const descriptionShort = td.querySelector(".description-short");
@@ -286,6 +308,7 @@ function newTextarea(td, newTd, rowId) {
   td.classList.add("hidden");
 }
 
+//function that updates the value of a cell after it has been edited by textarea element
 function updateTextarea(td, newValue, descriptionShort, descriptionRest) {
   if (!descriptionShort) {
     descriptionShort = td.querySelector(".description-short");
@@ -315,11 +338,13 @@ function updateTextarea(td, newValue, descriptionShort, descriptionRest) {
   descriptionRest.textContent = newValue.slice(DESCRIPTION_SHORT_LENGTH);
 }
 
+//function that sets the change to the changes object
 function setChange(rowId, className, newValue, oldValue) {
   if (!changes[className]) changes[className] = {};
   changes[className][rowId] = { newValue, oldValue };
 }
 
+//function that sends the changes to the server and handles possible errors
 async function saveChanges() {
   if (Object.keys(changes).length === 0) return;
 
@@ -352,6 +377,7 @@ async function saveChanges() {
   }
 }
 
+//function that undoes the changes made by the user
 function undoChanges() {
   Object.entries(changes).forEach(([column, rows]) => {
     Object.entries(rows).forEach(([rowId, value]) => {
@@ -381,6 +407,7 @@ function undoChanges() {
   stopEditing();
 }
 
+//function that shows modal with error message
 function showErrorModal(errorMsg) {
   const modal = document.createElement("div");
 

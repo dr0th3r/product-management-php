@@ -12,7 +12,7 @@
     type="number" 
     name="price_min" 
     id="price-min" 
-    <?php if ($priceMin != $filteringOptions['price_min']) echo "value=$priceMin" ?>
+    <?php if ($currentPriceMin != $filteringOptions['price_min']) echo "value=$currentPriceMin" ?>
     placeholder="Minimální cena"
     max="<?= $filteringOptions['price_max'] ?>"
   >
@@ -21,7 +21,7 @@
     type="number" 
     name="price_max" 
     id="price-max" 
-    <?php if ($priceMax != $filteringOptions['price_max']) echo "value=$priceMax" ?>
+    <?php if ($currentPriceMax != $filteringOptions['price_max']) echo "value=$currentPriceMax" ?>
     placeholder="Maximální cena"
     min="<?= $filteringOptions['price_min'] ?>"
   >
@@ -33,11 +33,11 @@
       id="product-type-search" 
       class="search-input" 
       placeholder="Typ produktu" 
-      value="<?= $selectedProductType ?>"
+      value="<?= $selectedProductTypeName ?>"
     >
     <ul class="search-options">
-      <?php foreach ($filteringOptions["product_types"] as $productType): ?>
-        <li data-id="<?= $productType["id"] ?>"><?= $productType["name"] ?></li>
+      <?php foreach ($filteringOptions["product_types"] as $id => $name): ?>
+        <li data-id="<?= $id ?>"><?= $name ?></li>
       <?php endforeach; ?>
     </ul>
   </div>
@@ -50,11 +50,11 @@
       id="manufacturer-search" 
       class="search-input" 
       placeholder="Výrobce"
-      value="<?= $selectedManufacturer ?>"
+      value="<?= $selectedManufacturerName ?>"
     >
     <ul class="search-options">
-      <?php foreach ($filteringOptions["manufacturers"] as $manufacturer): ?>
-        <li data-id="<?= $manufacturer["id"] ?>"><?= $manufacturer["name"] ?></li>
+      <?php foreach ($filteringOptions["manufacturers"] as $id => $name): ?>
+        <li data-id="<?= $id ?>"><?= $name ?></li>
       <?php endforeach; ?>
     </ul>
   </div>  

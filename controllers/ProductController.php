@@ -4,23 +4,27 @@
   require_once "../config/db.php";
 
   class ProductController {
-    const EXPORT_PATH = "/products/export";
 
+    //function that returns the page with product in a table
     public static function getPage() {
+      //we define the title and description of the page as well as css and js files to be linked
       $title = "Správa produktů";
       $description = $title;
       $styles = ["product/style.css"];
       $scripts = ["product/script.js"];
     
       //we need to export the url with the current query params so that filtering and ordering is preserved
-      $exportUrl = self::EXPORT_PATH . "?" . http_build_query($_GET);
-      $product = self::class;
+      $exportUrl = "/products/export?" . http_build_query($_GET);
+      
+      $controller = self::class;
 
+      //we need to parse filters that will be used when getting parts of the page in the view
       $filters = self::parseFilters();
 
-      require "../views/product/page.php";
+      require "../views/layout/filterableTable.php";
     }
 
+    //function that decodes the changes from the request and calls the editProducts function from the model
     public static function editProducts() {
       $changes = json_decode(file_get_contents("php://input"), true);
 
@@ -38,6 +42,7 @@
       }
     }
 
+    //function that exports products to a csv file
     public static function exportProducts() {
       $filename = "produkty-" . date("Y-m-d") . ".csv";
 
@@ -64,7 +69,9 @@
       exit();
     }
 
+    //function that gets the filtering menu
     public static function getFilterMenu() {      
+      //we need hidden inputs for these query params so that they are preserved when submitting the form
       $hiddenInputs = [];
       foreach (["order_by", "order", "page"] as $queryParam => $_) {
         if (!empty($_GET[$queryParam])) {
@@ -72,42 +79,32 @@
         }
       }
 
+      //filtering options that contain minimal and maximal price, product types and manufacturers
       $filteringOptions = Product::getFilteringOptions();
 
-      $priceMin = floor(empty($_GET["price_min"]) ? $filteringOptions["price_min"] : $_GET["price_min"]);
-      $priceMax = ceil(empty($_GET["price_max"]) ? $filteringOptions["price_max"] : $_GET["price_max"]);
-
-      if ($priceMin > $priceMax) {
-        $tmp = $priceMin;
-        $priceMin = $priceMax;
-        $priceMax = $tmp;
+      //we get the min and max price from the query params or we use the default one
+      $currentPriceMin = floor(empty($_GET["price_min"]) ? $filteringOptions["price_min"] : $_GET["price_min"]);
+      $currentPriceMax = ceil(empty($_GET["price_max"]) ? $filteringOptions["price_max"] : $_GET["price_max"]);
+      //if the min price is greater than the max price, we swap them
+      if ($currentPriceMin > $currentPriceMax) {
+        $tmp = $currentPriceMin;
+        $currentPriceMin = $currentPriceMax;
+        $currentPriceMax = $tmp;
       }
 
-      $selectedProductTypeId = $_GET["product_type"] ?? "";
-      $selectedManufacturerId = $_GET["manufacturer"] ?? "";
-      $selectedProductType = "";
-      $selectedManufacturer = "";
-
-      foreach ($filteringOptions["product_types"] as $productType) {
-        if ($productType["id"] == $selectedProductTypeId) {
-          $selectedProductType = $productType["name"];
-          break;
-        }
-      }
-
-      foreach ($filteringOptions["manufacturers"] as $manufacturer) {
-        if ($manufacturer["id"] == $selectedManufacturerId) {
-          $selectedManufacturer = $manufacturer["name"];
-          break;
-        }
-      }
+      //we check if the product type/manufacturer exists and if so, we store its id and name
+      $selectedProductTypeId = self::parseIfArrayKey("product_type", $filteringOptions["product_types"]);
+      $selectedProductTypeName = $filteringOptions["product_types"][$selectedProductTypeId] ?? "";
+      $selectedManufacturerId = self::parseIfArrayKey("manufacturer", $filteringOptions["manufacturers"]);
+      $selectedManufacturerName = $filteringOptions["manufacturers"][$selectedManufacturerId] ?? "";
 
       require "../views/product/filterMenu.php";
     }
 
+    //function that gets the navigation between pages
     public static function getNav($filters = []) {
       $pageCount = ceil(Product::getProductCount($filters) / Product::DEFAULT_LIMIT);
-      $currentPage = $_GET["page"] ?? 1;
+      $currentPage =  min($_GET["page"] ?? 1, $pageCount);
 
       if ($currentPage > 1) {
         $firstPageQuery = http_build_query(["page" => 1] + $_GET);
@@ -126,38 +123,40 @@
     }
 
     public static function getTableHead() {  
+      //we get the column by which data is currently ordered and the order (asc/desc)
       [$currentOrderByColumn, $order] = self::parseOrdering();
 
+      /*NOTE: 
+      we could optimise this by not building common querie and then do order and pagination
+      queries separately
+      */
       $columns = Product::ORDER_BY_COLUMNS + Product::OTHER_COLUMNS;
       $queries = [];
       $isAsc = [];
 
+      /*
+      for each column by which we can order data, we create a query for sorting
+      by that column and store information about if the order is going to be ascending or descending
+      */
       foreach (Product::ORDER_BY_COLUMNS as $key => $_) {
         $isCurrentlyOrderedByThisColumn = $currentOrderByColumn === $key;
-
         $newQueryParams = [];
-
         $newQueryParams["order_by"] = $key;
 
         //if this column is the one by which products are currently ordered
-        if ($isCurrentlyOrderedByThisColumn) {
-          if ($order === Order::Asc) {
+        if ($isCurrentlyOrderedByThisColumn && $order === Order::Asc) {
             $isAsc[] = true;
             $newQueryParams["order"] = Order::Desc;
-          } else {
-            $isAsc[] = false;
-            $newQueryParams["order"] = Order::Asc;
-          }
-
-          $newQueryParams["page"] = $_GET["page"] ?? 1;
         } else {
           $isAsc[] = false;
           $newQueryParams["order"] = Order::Asc;
-          $newQueryParams["page"] = 1;
         }
-
         //since the value is enum, we need to get the string value
         $newQueryParams["order"] = $newQueryParams["order"]->value;
+
+        if ($isCurrentlyOrderedByThisColumn && isset($_GET["page"])) {
+          $newQueryParams["page"] = $_GET["page"];
+        }
 
         $queries[] = http_build_query($newQueryParams + $_GET);
       }
@@ -175,16 +174,24 @@
       require "../views/product/tableBody.php";
     }
 
+    //NOTE: we could also take filter options as a parameter and apply filters if they are valid filter options
+    //helper function to parse filters
     private static function parseFilters() {
+      //we try to get price min/max and if there is none provide, we use 0/PHP_INT_MAX
       $priceMin = empty($_GET["price_min"]) ? 0 : floor($_GET["price_min"]);
       $priceMax = empty($_GET["price_max"]) ? PHP_INT_MAX : ceil($_GET["price_max"]);
 
+      //if the price min is greater than the price max, we swap them
       if ($priceMin > $priceMax) {
         $tmp = $priceMin;
         $priceMin = $priceMax;
         $priceMax = $tmp;
       }
       
+      /*
+      we add filters to associative array where the key is the column name and the value is 
+      a tuple containing comparison operator and the compared value(s)
+      */
       $filters = [];
       if (!empty($_GET["search"])) {
         $filters["code"] = [ComparisonOperator::Like, "%{$_GET['search']}%"];
@@ -202,15 +209,24 @@
       return $filters;
     }
 
+    //helper function to parse ordering
     private static function parseOrdering() {
-      $orderBy = $_GET["order_by"] ?? Product::DEFAULT_ORDER_BY_COLUMN;
-      //if the column is not in the array of orderable columns, use the default one
-      $orderBy = Product::ORDER_BY_COLUMNS[$orderBy] ? $orderBy : Product::DEFAULT_ORDER_BY_COLUMN;
+      $orderBy = self::parseIfArrayKey("order_by", Product::ORDER_BY_COLUMNS, Product::DEFAULT_ORDER_BY_COLUMN);
+
       $order = empty($_GET["order"])
         ? Product::DEFAULT_ORDER
         : (Order::tryFrom($_GET["order"]) ?? Product::DEFAULT_ORDER);
 
       return [$orderBy, $order];
+    }
+
+    //NOTE: if we had more controllers, we should put this into separate file with helper functions
+    //parses the query param and check if it's one of array keys, otherwise return default value
+    private static function parseIfArrayKey(string $paramName, array $array, $default=null) {
+      $key = $_GET[$paramName] ?? $default;
+      return array_key_exists($key, $array)
+        ? $key
+        : $default;
     }
   }
 

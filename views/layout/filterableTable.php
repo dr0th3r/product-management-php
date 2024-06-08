@@ -6,8 +6,8 @@
     <aside>
       <div>
         <?php
-          $product::getFilterMenu();
-          $product::getNav($filters);
+          $controller::getFilterMenu();
+          $controller::getNav($filters);
         ?>
       </div>
       <div class="edit-export-btns">
@@ -18,8 +18,8 @@
     </aside>
     <table>
       <?php
-        $product::getTableHead();
-        $product::getTableBody($filters);
+        $controller::getTableHead();
+        $controller::getTableBody($filters);
       ?>
     </table>
   </div>
