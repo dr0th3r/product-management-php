@@ -181,6 +181,8 @@ function changeForInput(td) {
   }
 }
 
+//NOTE: we could use OOP as well
+
 //function that creates new input element for editing a cell
 function newInput(td, newTd, rowId, type) {
   const newInput = document.createElement("input");

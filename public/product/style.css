@@ -5,6 +5,7 @@
   --s: #eee;
   --error: #cf1616;
   --radius: 8px;
+  --neutral: #fff;
 }
 
 body {
@@ -80,6 +81,7 @@ button {
 }
 
 table {
+  table-layout: auto;
   height: fit-content;
 }
 
@@ -93,18 +95,20 @@ tr:nth-child(2n) {
 
 thead tr {
   background-color: var(--p);
-  color: #fff;
+  color: var(--neutral);
 }
 
 th, td {
   padding: 5px;
   text-align: left;
-  max-width: 30vw;
+  max-width: 25vw;
   height: 2.5rem;
+  min-width: 7.5rem;
 }
 
 th a {
-  color: #fff;
+  color: var(--neutral);
+  vertical-align: middle;
 }
 
 td > input, td > textarea {
@@ -180,7 +184,7 @@ h2 {
   top: 100%;
   left: 0;
   right: 0;
-  background-color: #fff;
+  background-color: var(--neutral);
   border-radius: 0 0 var(--radius) var(--radius);
   border: 1px solid black;
   max-height: 200px;
@@ -226,7 +230,7 @@ h2 {
 
 #show-results-btn, #edit-btn, #cancel-btn, #export-btn {
   background-color: var(--p);
-  color: #fff;
+  color: var(--neutral);
   font-weight: bold;
   border: 1px solid var(--p);
   transition: all .3s ease-out;
@@ -262,7 +266,7 @@ p {
   top: 50%;
   left: 50%;
   translate: transform(-50%, -50%);
-  background-color: #fff;
+  background-color: var(--neutral);
   border-radius: var(--radius);
   padding: 1rem;
   border: 1px solid var(--error);
@@ -271,7 +275,7 @@ p {
 .close-modal-btn {
   align-self: flex-end;
   background-color: var(--error);
-  color: #fff;
+  color: var(--neutral);
   border: none;
   padding: .5rem;
   font-weight: bold;
@@ -284,4 +288,12 @@ p {
   box-sizing: border-box;
   padding: .5rem;
   font-size: 1rem;
+}
+
+svg {
+  fill: var(--neutral);
+  vertical-align: middle;
+  max-height: 1rem;
+
+  margin-left: .2rem;
 }

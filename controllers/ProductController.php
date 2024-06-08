@@ -126,18 +126,21 @@
       //we get the column by which data is currently ordered and the order (asc/desc)
       [$currentOrderByColumn, $order] = self::parseOrdering();
 
-      /*NOTE: 
-      we could optimise this by not building common querie and then do order and pagination
-      queries separately
-      */
-      $columns = Product::ORDER_BY_COLUMNS + Product::OTHER_COLUMNS;
-      $queries = [];
-      $isAsc = [];
+      $orderByColumns = Product::ORDER_BY_COLUMNS;
+      $otherColumns = Product::OTHER_COLUMNS;
 
-      /*
-      for each column by which we can order data, we create a query for sorting
-      by that column and store information about if the order is going to be ascending or descending
-      */
+      //we create a query to store filters that are common for all ordering options
+      //we have to remove ordering and pagination
+      $commonQueryParams = $_GET;
+      unset($commonQueryParams["order_by"]);
+      unset($commonQueryParams["order"]);
+      unset($commonQueryParams["page"]);
+      //we need to add & to the end so that we can append individual queries
+      $commonQuery = http_build_query($commonQueryParams) . "&"; 
+
+      $individualQueries = [];
+      $isCurrentAsc = false;
+
       foreach (Product::ORDER_BY_COLUMNS as $key => $_) {
         $isCurrentlyOrderedByThisColumn = $currentOrderByColumn === $key;
         $newQueryParams = [];
@@ -145,10 +148,9 @@
 
         //if this column is the one by which products are currently ordered
         if ($isCurrentlyOrderedByThisColumn && $order === Order::Asc) {
-            $isAsc[] = true;
+            $isCurrentAsc = true;
             $newQueryParams["order"] = Order::Desc;
         } else {
-          $isAsc[] = false;
           $newQueryParams["order"] = Order::Asc;
         }
         //since the value is enum, we need to get the string value
@@ -158,7 +160,7 @@
           $newQueryParams["page"] = $_GET["page"];
         }
 
-        $queries[] = http_build_query($newQueryParams + $_GET);
+        $individualQueries[$key] = http_build_query($newQueryParams);
       }
 
       require "../views/product/tableHead.php";
